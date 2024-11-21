@@ -3,428 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adventure</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8293838200487766"
-     crossorigin="anonymous">
-    </script>
+    <title>ChatOnline</title>
+
+    <style>
+        #loginBox {
+            width: 400px;
+            height: 70px;
+            background-color: #67f0ab;
+            border-radius: 10px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        #chatBox {
+            width: 400px;
+            height: 300px;
+            background-color: #d6f09c;
+            border-radius: 10px;
+            margin: 20px auto;
+            padding: 20px;        }
+    </style>
 
     <script>
         window.onload = function(){
-            
-            //初始化关键变量
-            //宝石名称列表
-            var List = ["BLUE","GOLD","GREEN","PINK","ROSE","SILVER","SKYBLUE"];  
-            //初始分数
-            var score = 0;
-            var up = 0;
-            //收集所有图片并计算坐标
-            const cells = document.getElementsByTagName("th");
-            for (i = 0 ;i < 64; i++ ){
-                cells[i].x = i % 8;
-                cells[i].y = (i - (i % 8))/8;
-                cells[i].Result = '(' + cells[i].x + ',' + cells[i].y +')';
-            }
-            
-            //地图
-            var status = [
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD'],
-                ['GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD','GOLD']
-            ]
+            const button = document.getElementById('login');
 
-            //随机铺满场地
-            function Reset(){
-                for (var i = 0 ; i < cells.length; i++){
-                    //if (status[cells[i].y][cells[i].x] =='D'){
-                        var tag = Math.floor(Math.random() * (List.length));
-                        ImageTag = '<img src="pictures/' + List[tag] + '.png">'
-                        cells[i].innerHTML = ImageTag;
-                        //将当前格子的情况计入地图
-                        status[cells[i].y][cells[i].x] = List[tag];
-                    //}
-                }
-            }
-            Reset();
+            button.addEventListener('click', function() {
+                if (username.value.trim() === '' && password.value.trim() === '')
+                    alert('Please input your username and password.')
+                else 
+                    alert('Login successfully.');
+            })
 
-        //函数们
 
-            //计算同色边界
-            //检查左边          
-            function CheckL(X,Y){
-                var Retag = X;
-                if (Retag!==0){
-                    while (status[Y][Retag-1] === status[Y][Retag]){
-                        Retag -= 1;
-                    }
-                }
-                cells[8*Y+X].Result += '('+ Retag + ',' + Y + ')';
-            }           
-            //检查上边
-            function CheckU(X,Y){
-                var Retag = Y;
-                if (Retag!==0){
-                    while (status[Retag-1][X] === status[Retag][X]){
-                        Retag -= 1;
-                        if (Retag === 0) {break};
-                    }
-                }
-                cells[8*Y+X].Result += '('+ X + ',' + Retag + ')';
-            }
-            //检查右边
-            function CheckR(X,Y){
-                var Retag = X;
-                if (Retag!==7){
-                    while (status[Y][Retag+1] === status[Y][Retag]){
-                        Retag += 1;
-                    }
-                }
-                cells[8*Y+X].Result += '('+ Retag + ',' + Y + ')';
-            }
-            //检查下边
-            function CheckD(X,Y){
-                var Retag = Y;
-                if (Retag!==7){
-                    while (status[Retag+1][X] === status[Retag][X]){
-                        Retag += 1;
-                        if (Retag === 7) {break};
-                    }
-                }
-                cells[8*Y+X].Result += '('+ X + ',' + Retag + ')';
-            }
-            
-            //定义移动动作 d:1234 ->左上右下
-            function move(i,d){
-                switch(d){
-                    case 1: 
-                        if (cells[i].x !== 0){
-                            cells[i-1].innerHTML = cells[i].innerHTML;
-                            cells[i].innerHTML = ' ';
-                            status[cells[i].y][cells[i].x-1] = status[cells[i].y][cells[i].x];
-                            status[cells[i].y][cells[i].x] = 'D';
-                        }
-                        break;
-                    case 2:
-                        if (cells[i].y !== 0){
-                            cells[i-8].innerHTML = cells[i].innerHTML;
-                            cells[i].innerHTML = ' ';
-                            status[cells[i].y-1][cells[i].x] = status[cells[i].y][cells[i].x];
-                            status[cells[i].y][cells[i].x] = 'D';
-                        }
-                        break;
-                    case 3:
-                        if (cells[i].x !== 7){
-                            cells[i+1].innerHTML = cells[i].innerHTML;
-                            cells[i].innerHTML = ' ';
-                            status[cells[i].y][cells[i].x+1] = status[cells[i].y][cells[i].x];
-                            status[cells[i].y][cells[i].x] = 'D';
-                        }
-                        break;
-                    case 4:
-                        if (cells[i].y !== 7){
-                            cells[i+8].innerHTML = cells[i].innerHTML;
-                            cells[i].innerHTML = ' ';
-                            status[cells[i].y+1][cells[i].x] = status[cells[i].y][cells[i].x];
-                            status[cells[i].y][cells[i].x] = 'D';
-                        }
-                        break;
-                    default:
-                        return 'Top';
-                }
-            }
-
-            //定义观察动作 d:1234 ->左上右下
-            function look(i,d){
-                switch(d){
-                    case 1: 
-                        if (cells[i].x !== 0){
-                            return cells[i-1].innerHTML;
-                        }
-                        break;
-                    case 2:
-                        if (cells[i].y !== 0){
-                            return cells[i-8].innerHTML;
-                        }
-                        break;
-                    case 3:
-                        if (cells[i].x !== 7){
-                            return cells[i+1].innerHTML;
-                        }
-                        break;
-                    case 4:
-                        if (cells[i].y !== 7){
-                            return cells[i+8].innerHTML;
-                        }
-                        break;
-                    default:
-                        return 'None';
-                }
-            }
-
-            //为所有赋予图片点击事件
-            function giveclick(){
-                var icons = document.getElementsByTagName('img');
-                //赋予点击高亮，再点击取消，同时保障只有一个个子高亮
-                for (var i = 0; i < icons.length; i++) {
-                    icons[i].addEventListener("click", function() {
-                        if (this.style.boxShadow === "red 0px 0px 8px"){
-                            this.style.boxShadow = '';
-                        }else{
-                            for (var j = 0; j < icons.length; j++){
-                                icons[j].style.boxShadow = '';
-                            }
-                            this.style.boxShadow = "0 0 8px red";
-                        }
-
-                    });
-                }
-                //交换位置
-                
-
-                
-            }
-            giveclick();
-
-            //测试用函数，注意删除
-            var tebutton = document.getElementById("test");
-            tebutton.onclick = function(){
-
-            }
-
-            //Reset按钮
-            var rebutton = document.getElementById("reset");
-            rebutton.onclick = function(){
-                Reset();
-                giveclick();
-                document.getElementById('score').innerHTML = 0;
-                up = 0;
-                score = 0
-            }
-
-            //Check按钮
-            function check(){
-                //重置删除状态
-                for (i = 0 ;i < 64; i++ ){
-                cells[i].Result = '(' + cells[i].x + ',' + cells[i].y +')';
-                }
-                //计算所有格子上下左右的同色边界
-                for (i = 0 ; i < 8 ; i++ ){
-                    for ( j = 0 ; j < 8 ; j++ ){
-                        CheckL(i,j);
-                        CheckU(i,j);
-                        CheckR(i,j);
-                        CheckD(i,j);
-                    }
-                }
-                //判断格子是否应该被消除并删除所有应被删除的格子
-                function ifdelete(){
-                    var exist = 0
-                    for (i = 0 ; i < 8 ; i++ ){
-                        for ( j = 0 ; j < 8 ; j++ ){
-                            if ((Math.abs(cells[8*j+i].Result[6]-cells[8*j+i].Result[16])>=2 |
-                                Math.abs(cells[8*j+i].Result[13]-cells[8*j+i].Result[23])>=2) &&
-                                status[j][i] !== 'D'){
-                                cells[8*j+i].Result = 0;
-                                cells[8*j+i].innerHTML = ' ';
-                                status[j][i] = 'D';
-                                exist = 1;
-                                up +=1;
-                            }else{
-                                cells[8*j+i].Result = 1;
-                            };
-                        }
-                    }
-                    //返回值为1则有需要删除的格子
-                    return exist;
-                }
-                var t = ifdelete();
-                ifdelete();
-                //调整剩余格子下落
-                for (n=0 ; n < 7 ; n++){
-                    for (i = 0 ; i < 8 ; i++ ){
-                        for ( j = 0 ; j < 7 ; j++ ){
-                            if (cells[8*(j+1)+i].innerHTML === ' '){
-                                move(8*j+i,4);
-                            }
-                        }
-                    }
-                }  
-                //补充宝石
-                for (var i = 0 ; i < cells.length; i++){
-                    if (cells[i].innerHTML === ' '){
-                        var tag = Math.floor(Math.random() * (List.length));
-                        ImageTag = '<img src="pictures/' + List[tag] + '.png">'
-                        cells[i].innerHTML = ImageTag;
-                        //将当前格子的情况计入地图
-                        status[cells[i].y][cells[i].x] = List[tag];
-                    }
-                }
-                //计算分数
-                score += up;
-                document.getElementById('score').innerHTML = score;
-                up = 0;
-                //赋予所有图片点击事件
-            }
-            var chbutton = document.getElementById("check");
-            chbutton.onclick = function(){
-                check();
-                giveclick();
-            }
-            
-            
-            //消除
-        }    
+        }
     </script>
 
-    <style>
-        * {
-            padding: 0;
-            margin: 0;
-            font-weight: normal;
-            text-align: center;
-        }
-
-        .outer {
-            background-color: rgba(52, 73, 23, 0.322);
-            margin: 0 10vw 0 10vw;
-            min-width: 450px;
-        }
-
-        .title {
-            height: 40px;
-        }
-
-        table {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        th,tr {
-            height: 50px;
-            width: 50px;
-            border: 0;
-        }
-
-        img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            display: block;   
-            border-radius: 10px; 
-        }
-
-        button{
-            height: 30px;
-            width: 100px;
-            margin: 25px 0 10px 0;
-        }
-
-    </style>
+<!-- Ptengine Tag -->
+<script src="https://js.ptengine.jp/1fqfmbf5.js"></script>
+<!-- End Ptengine Tag -->
+            
 
 </head>
 <body>
-    <div class="outer">
-        <div class="title">
-            Where dream begins
+    <div id="loginBox">
+        <div>UserName
+            <input id="username" type="text">
         </div>
-        Score：
-        <spam id="score" >
-            0
-        </spam>
-        <div class="playbox">
-            <table>
-        
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                </tr>
-                <tr>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                    <th><img src="pictures/GOLD.png"></th>
-                </tr>
-                <tr>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>
-                <tr>               
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>  
-                <tr>              
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>   
-                <tr>             
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>   
-                <tr>             
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>  
-                <tr>              
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                    <th><img src="pictures/GOLD.png"></img></th>
-                </tr>  
-            </table>
-
-            <button id="reset">Reset</button> 
-            <button id="check">Check</button>
-            <button id="test">Test</button>
+        <div>Password
+            <input id="password" type="password">
         </div>
+        <button id="Register">Register</button>
+        <button id="login">login</button>
+        <button id="reset">Reset</button>
     </div>
-
+    <div id="chatBox"></div>
+    
+    
 </body>
 </html>
