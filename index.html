@@ -19,60 +19,59 @@
         }
 
         function addCompany() {
-            setTimeout(() => {
-                const company = prompt("Enter Company Name:");
-                if (!company) return;
-                const account = prompt("Enter Account Email:");
-                if (!account) return;
-                const password = prompt("Enter Password:");
-                if (!password) return;
-                
+            const company = prompt("Enter Company Name:");
+            const account = prompt("Enter Account Email:");
+            const password = prompt("Enter Password:");
+            if (company && account && password) {
                 localStorage.setItem(company, JSON.stringify({ account, password }));
-                renderCompanyButtons();
-            }, 100);
+                renderCompanyDropdown();
+            }
         }
 
-        function deleteCompany(company) {
-            localStorage.removeItem(company);
-            renderCompanyButtons();
-        }
-
-        function renderCompanyButtons() {
-            const container = document.getElementById("companyButtons");
-            container.innerHTML = "";
-            Object.keys(localStorage).forEach(company => {
-                try {
-                    const data = JSON.parse(localStorage.getItem(company));
-                    if (!data || !data.account || !data.password) return;
-
-                    const btnWrapper = document.createElement("div");
-                    btnWrapper.className = "flex items-center space-x-2 mt-2";
-
-                    const btn = document.createElement("button");
-                    btn.textContent = company;
-                    btn.className = "flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400";
-                    btn.onclick = function() {
-                        document.getElementById("email").value = data.account;
-                        document.getElementById("password").value = data.password;
-                    };
-
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.textContent = "❌";
-                    deleteBtn.className = "bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600";
-                    deleteBtn.onclick = function() {
-                        deleteCompany(company);
-                    };
-
-                    btnWrapper.appendChild(btn);
-                    btnWrapper.appendChild(deleteBtn);
-                    container.appendChild(btnWrapper);
-                } catch (e) {
-                    console.error("Error parsing localStorage data:", e);
+        function deleteCompany() {
+            const dropdown = document.getElementById("companyDropdown");
+            const selectedCompany = dropdown.value;
+            if (selectedCompany) {
+                const confirmation = confirm(`请问您确定要删除 ${selectedCompany} 吗？`);
+                if (confirmation) {
+                    localStorage.removeItem(selectedCompany);
+                    renderCompanyDropdown();
                 }
-            });
+            }
         }
 
-        document.addEventListener("DOMContentLoaded", renderCompanyButtons);
+        function renderCompanyDropdown() {
+            const dropdown = document.getElementById("companyDropdown");
+            dropdown.innerHTML = "";
+            const keys = Object.keys(localStorage);
+            if (keys.length > 0) {
+                const defaultOption = document.createElement("option");
+                defaultOption.value = "";
+                defaultOption.textContent = "Select a company";
+                dropdown.appendChild(defaultOption);
+                keys.forEach(company => {
+                    const option = document.createElement("option");
+                    option.value = company;
+                    option.textContent = company;
+                    dropdown.appendChild(option);
+                });
+                dropdown.style.display = "block";
+            } else {
+                dropdown.style.display = "none";
+            }
+        }
+
+        function fillLoginFields() {
+            const dropdown = document.getElementById("companyDropdown");
+            const selectedCompany = dropdown.value;
+            if (selectedCompany) {
+                const data = JSON.parse(localStorage.getItem(selectedCompany));
+                document.getElementById("email").value = data.account;
+                document.getElementById("password").value = data.password;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", renderCompanyDropdown);
     </script>
 </head>
 <body class="flex flex-col h-screen items-center justify-center bg-gray-100">
@@ -98,8 +97,11 @@
                 Login
             </button>
         </form>
-        <button onclick="addCompany()" class="w-full bg-green-500 text-white py-2 rounded-lg mt-4 hover:bg-green-600">+</button>
-        <div id="companyButtons" class="mt-4"></div>
+        <div class="flex space-x-2 mt-4">
+            <button onclick="addCompany()" class="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600">+</button>
+            <button onclick="deleteCompany()" class="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600">-</button>
+        </div>
+        <select id="companyDropdown" class="w-full mt-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="fillLoginFields()" style="display: none;"></select>
     </div>
 </body>
 </html>
