@@ -1,63 +1,105 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatOnline</title>
-
-    <style>
-        #loginBox {
-            width: 400px;
-            height: 70px;
-            background-color: #67f0ab;
-            border-radius: 10px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-        #chatBox {
-            width: 400px;
-            height: 300px;
-            background-color: #d6f09c;
-            border-radius: 10px;
-            margin: 20px auto;
-            padding: 20px;        }
-    </style>
-
+    <title>Login - Ptengine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        window.onload = function(){
-            const button = document.getElementById('login');
-
-            button.addEventListener('click', function() {
-                if (username.value.trim() === '' && password.value.trim() === '')
-                    alert('Please input your username and password.')
-                else 
-                    alert('Login successfully.');
-            })
-
-
+        function togglePassword() {
+            const passwordInput = document.getElementById("password");
+            const toggleIcon = document.getElementById("toggleIcon");
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleIcon.textContent = "🙈";
+            } else {
+                passwordInput.type = "password";
+                toggleIcon.textContent = "👁";
+            }
         }
+
+        function addCompany() {
+            setTimeout(() => {
+                const company = prompt("Enter Company Name:");
+                if (!company) return;
+                const account = prompt("Enter Account Email:");
+                if (!account) return;
+                const password = prompt("Enter Password:");
+                if (!password) return;
+                
+                localStorage.setItem(company, JSON.stringify({ account, password }));
+                renderCompanyButtons();
+            }, 100);
+        }
+
+        function deleteCompany(company) {
+            localStorage.removeItem(company);
+            renderCompanyButtons();
+        }
+
+        function renderCompanyButtons() {
+            const container = document.getElementById("companyButtons");
+            container.innerHTML = "";
+            Object.keys(localStorage).forEach(company => {
+                try {
+                    const data = JSON.parse(localStorage.getItem(company));
+                    if (!data || !data.account || !data.password) return;
+
+                    const btnWrapper = document.createElement("div");
+                    btnWrapper.className = "flex items-center space-x-2 mt-2";
+
+                    const btn = document.createElement("button");
+                    btn.textContent = company;
+                    btn.className = "flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400";
+                    btn.onclick = function() {
+                        document.getElementById("email").value = data.account;
+                        document.getElementById("password").value = data.password;
+                    };
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "❌";
+                    deleteBtn.className = "bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600";
+                    deleteBtn.onclick = function() {
+                        deleteCompany(company);
+                    };
+
+                    btnWrapper.appendChild(btn);
+                    btnWrapper.appendChild(deleteBtn);
+                    container.appendChild(btnWrapper);
+                } catch (e) {
+                    console.error("Error parsing localStorage data:", e);
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", renderCompanyButtons);
     </script>
-
-<!-- Ptengine Tag -->
-<script src="https://js.ptengine.jp/1fqfmbf5.js"></script>
-<!-- End Ptengine Tag -->
-            
-
 </head>
-<body>
-    <div id="loginBox">
-        <div>UserName
-            <input id="username" type="text">
-        </div>
-        <div>Password
-            <input id="password" type="password">
-        </div>
-        <button id="Register">Register</button>
-        <button id="login">login</button>
-        <button id="reset">Reset</button>
+<body class="flex flex-col h-screen items-center justify-center bg-gray-100">
+    <div class="w-96 bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Welcome</h2>
+        <form>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm mb-1">Email</label>
+                <input id="email" type="text" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm mb-1">Super Email</label>
+                <p class="text-gray-600 text-sm">yu.du@ptmind.com</p>
+            </div>
+            <div class="mb-4 relative">
+                <label class="block text-gray-700 text-sm mb-1">Password</label>
+                <input id="password" type="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="button" class="absolute right-3 top-9 text-gray-600" onclick="togglePassword()">
+                    <span id="toggleIcon">👁</span>
+                </button>
+            </div>
+            <button type="submit" class="w-full bg-blue-900 text-white py-2 rounded-lg hover:bg-blue-800">
+                Login
+            </button>
+        </form>
+        <button onclick="addCompany()" class="w-full bg-green-500 text-white py-2 rounded-lg mt-4 hover:bg-green-600">+</button>
+        <div id="companyButtons" class="mt-4"></div>
     </div>
-    <div id="chatBox"></div>
-    
-    
 </body>
 </html>
