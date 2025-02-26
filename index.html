@@ -23,7 +23,7 @@
             const account = prompt("Enter Account Email:");
             const password = prompt("Enter Password:");
             if (company && account && password) {
-                localStorage.setItem(company, JSON.stringify({ account, password }));
+                localStorage.setItem(`company_${company}`, JSON.stringify({ account, password }));
                 renderCompanyDropdown();
             }
         }
@@ -32,7 +32,8 @@
             const dropdown = document.getElementById("companyDropdown");
             const selectedCompany = dropdown.value;
             if (selectedCompany) {
-                const confirmation = confirm(`请问您确定要删除 ${selectedCompany} 吗？`);
+                const companyName = selectedCompany.replace("company_", "");
+                const confirmation = confirm(`请问您确定要删除 ${companyName} 吗？`);
                 if (confirmation) {
                     localStorage.removeItem(selectedCompany);
                     renderCompanyDropdown();
@@ -43,7 +44,7 @@
         function renderCompanyDropdown() {
             const dropdown = document.getElementById("companyDropdown");
             dropdown.innerHTML = "";
-            const keys = Object.keys(localStorage);
+            const keys = Object.keys(localStorage).filter(key => key.startsWith("company_"));
             if (keys.length > 0) {
                 const defaultOption = document.createElement("option");
                 defaultOption.value = "";
@@ -52,7 +53,7 @@
                 keys.forEach(company => {
                     const option = document.createElement("option");
                     option.value = company;
-                    option.textContent = company;
+                    option.textContent = company.replace("company_", "");
                     dropdown.appendChild(option);
                 });
                 dropdown.style.display = "block";
