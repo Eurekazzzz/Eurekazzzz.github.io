@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>宝石消除小游戏-健壮逻辑版</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+        body {margin:0; background:#f0f4fa; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#222;}
+        .container {max-width:520px;margin:40px auto 0;background:#fff;border-radius:24px;box-shadow:0 12px 32px rgba(0,0,0,0.08);padding:32px 16px 24px 16px;}
+        .title {font-size:2rem;text-align:center;font-weight:bold;letter-spacing:2px;color:#007aff;margin-bottom:8px;}
+        .scorebox {text-align:center;font-size:1.2rem;margin-bottom:20px;color:#666;}
+        .board-wrap {display:flex;justify-content:center;align-items:center;position:relative;min-height:410px;}
+        .board-grid {display:grid;grid-template-columns:repeat(8,48px);grid-template-rows:repeat(8,48px);gap:0;background:#e9eef6;border-radius:12px;box-shadow:0 2px 8px #c2d1e1;z-index:1;position:relative;}
+        .gem-cell {width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2.1rem;border-radius:7px;transition:box-shadow 0.15s,background 0.15s;background:#fafdff;cursor:pointer;position:relative;user-select:none;}
+        .gem-cell.selected {box-shadow:0 0 8px 2px #ff3366;background:#fff9f9;z-index:3;transform:scale(1.1);}
+        .btns {margin:25px 0 10px 0;text-align:center;}
+        button {height:36px;width:110px;margin:0 12px;border-radius:18px;border:none;background:#007aff;color:white;font-size:1rem;font-weight:500;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 10px #b2d6fa33;transition:background 0.2s;}
+        button:hover {background:#005ac4;}
+        @media (max-width:600px){
+            .container{margin:8px;padding:6vw 1vw 4vw 1vw;}
+            .board-wrap{min-height:320px;}
+            .board-grid{grid-template-columns:repeat(8,36px);grid-template-rows:repeat(8,36px);}
+            .gem-cell{width:36px;height:36px;font-size:1.35rem;line-height:36px;}
+        }
+        .tips {text-align:center;color:#888;font-size:0.97rem;margin-top:10px;letter-spacing:1px;}
+        .float-gem {position:absolute;will-change:transform;z-index:5;pointer-events:none;}
+        .explosion-pixel {position:absolute;width:10px;height:10px;border-radius:2px;opacity:1;pointer-events:none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title">宝石消除小游戏</div>
+    <div class="scorebox">分数：<span id="score">0</span></div>
+    <div class="board-wrap" style="position:relative;">
+        <div class="board-grid" id="board"></div>
+        <div id="anim-layer" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:99;"></div>
+    </div>
+    <div class="btns">
+        <button id="reset">重置</button>
+    </div>
+    <div class="tips">点击任意宝石高亮，再点击相邻宝石可交换。交换后如有三连将自动消除。</div>
+</div>
+<script>
+const SIZE = 8, GEM_TYPES = [
+    {emoji: "💎", color: "#3ff"},
+    {emoji: "🟡", color: "#fe0"},
+    {emoji: "🟢", color: "#2e2"},
+    {emoji: "🧊", color: "#bdf"},
+    {emoji: "🔴", color: "#f44"},
+    {emoji: "⚪", color: "#fff"},
+    {emoji: "🔷", color: "#09f"}
+];
+const ANIMATION = {swap: 300, explode: 350, fall: 350};
+
+// =========== 核心数据模型 ===========
+class GemBoard {
+    constructor(size=SIZE, gemTypes=GEM_TYPES.length) {
+        this.size = size; this.gemTypes = gemTypes; this.score = 0;
+        this.init();
+    }
+    init() {
+        this.board = [];
+        for(let y=0; y<this.size; y++)
+            this.board[y] = Array.from({length:this.size}, ()=>this.randomGem());
+        this.removeInitialMatches();
+        this.score = 0;
+    }
+    randomGem() { return Math.floor(Math.random() * this.gemTypes); }
+    removeInitialMatches() {
+        let changed;
+        do {
+            changed = false;
+            for(let y=0;y<this.size;y++)
+                for(let x=0;x<this.size-2;x++)
+                    if(this.board[y][x]===this.board[y][x+1]&&this.board[y][x+1]===this.board[y][x+2])
+                        {this.board[y][x+2]=this.randomGem();changed=true;}
+            for(let x=0;x<this.size;x++)
+                for(let y=0;y<this.size-2;y++)
+                    if(this.board[y][x]===this.board[y+1][x]&&this.board[y+1][x]===this.board[y+2][x])
+                        {this.board[y+2][x]=this.randomGem();changed=true;}
+        }while(changed);
+    }
+    swap(x1,y1,x2,y2) {
+        let t = this.board[y1][x1];
+        this.board[y1][x1] = this.board[y2][x2];
+        this.board[y2][x2] = t;
+    }
+    getGem(x,y) { return this.board[y][x]; }
+    setGem(x,y,val) { this.board[y][x] = val; }
+    findMatches() {
+        let matches = [], used = Array.from({length:this.size}, ()=>Array(this.size).fill(false));
+        for(let y=0; y<this.size; y++) {
+            let count=1;
+            for(let x=1; x<=this.size; x++) {
+                if(x<this.size&&this.board[y][x]===this.board[y][x-1]) count++;
+                else {
+                    if(count>=3)
+                        for(let k=0;k<count;k++)
+                            if(!used[y][x-1-k]){matches.push({x:x-1-k,y});used[y][x-1-k]=true;}
+                    count=1;
+                }
+            }
+        }
+        for(let x=0; x<this.size; x++) {
+            let count=1;
+            for(let y=1; y<=this.size; y++) {
+                if(y<this.size&&this.board[y][x]===this.board[y-1][x]) count++;
+                else {
+                    if(count>=3)
+                        for(let k=0;k<count;k++)
+                            if(!used[y-1-k][x]){matches.push({x,y:y-1-k});used[y-1-k][x]=true;}
+                    count=1;
+                }
+            }
+        }
+        return matches;
+    }
+    removeMatches(matches) {
+        for(const {x,y} of matches) this.board[y][x]=null;
+        this.score += matches.length;
+    }
+    resolveGravity() {
+        let falls = [];
+        for(let x=0; x<this.size; x++) {
+            let pointer = this.size-1;
+            for(let y=this.size-1; y>=0; y--) {
+                if(this.board[y][x]!=null) {
+                    if(pointer!==y)
+                        falls.push({from:{x,y},to:{x,y:pointer},gem:this.board[y][x]});
+                    this.board[pointer][x]=this.board[y][x];
+                    pointer--;
+                }
+            }
+            for(let y=pointer;y>=0;y--) this.board[y][x]=null;
+        }
+        return falls;
+    }
+    refill() {
+        let news = [];
+        for(let x=0; x<this.size; x++) {
+            let empty = 0;
+            for(let y=0; y<this.size; y++)
+                if(this.board[y][x]==null) empty++;
+            for(let k=0; k<empty; k++) {
+                this.board[k][x]=this.randomGem();
+                news.push({to:{x,y:k},type:this.board[k][x]});
+            }
+        }
+        return news;
+    }
+}
+
+// =========== 主游戏&动画控制 ===========
+class GemGame {
+    constructor() {
+        this.board = new GemBoard();
+        this.selected = null;
+        this.animating = false;
+        this.$board = document.getElementById('board');
+        this.$anim = document.getElementById('anim-layer');
+        this.scoreEl = document.getElementById('score');
+        this.render();
+        this.bindEvents();
+    }
+    reset() {
+        this.board.init();
+        this.selected = null;
+        this.animating = false;
+        this.render();
+    }
+    bindEvents() {
+        this.$board.addEventListener('click', e=>{
+            if(this.animating) return;
+            const cell = e.target.closest('.gem-cell');
+            if(!cell) return;
+            const x = +cell.dataset.x, y = +cell.dataset.y;
+            if(this.selected) {
+                if(this.selected.x===x&&this.selected.y===y) {
+                    this.selected = null; this.render(); return;
+                }
+                if(Math.abs(this.selected.x-x)+Math.abs(this.selected.y-y)===1) {
+                    this.processSwap(this.selected,{x,y});
+                    this.selected = null;
+                } else { this.selected={x,y}; this.render(); }
+            } else { this.selected={x,y}; this.render(); }
+        });
+        document.getElementById('reset').onclick=()=>this.reset();
+    }
+    render() {
+        const frag = document.createDocumentFragment();
+        for(let y=0;y<SIZE;y++)
+            for(let x=0;x<SIZE;x++) {
+                const div = document.createElement('div');
+                div.className = 'gem-cell'+(this.selected&&this.selected.x===x&&this.selected.y===y?' selected':'');
+                div.textContent = GEM_TYPES[this.board.getGem(x,y)]?GEM_TYPES[this.board.getGem(x,y)].emoji:'';
+                div.dataset.x = x; div.dataset.y = y;
+                frag.appendChild(div);
+            }
+        this.$board.innerHTML=''; this.$board.appendChild(frag);
+        this.scoreEl.textContent = this.board.score;
+    }
+
+    // ====== 动画流程：严格先动画再刷新数据和DOM ======
+    async processSwap(from, to) {
+        this.animating = true;
+        await this.animateSwap(from, to);
+        this.board.swap(from.x, from.y, to.x, to.y);
+        this.render();
+        if(await this.resolveMatches()) {
+        } else {
+            await this.animateSwap(to, from);
+            this.board.swap(from.x, from.y, to.x, to.y);
+            this.render();
+        }
+        this.animating = false;
+    }
+    async resolveMatches() {
+        let anyMatch=false;
+        while(true) {
+            let matches = this.board.findMatches();
+            if(!matches.length) break;
+            anyMatch=true;
+            await this.animateExplosion(matches);
+            this.board.removeMatches(matches);
+            this.render();
+            let falls = this.board.resolveGravity();
+            await this.animateFalls(falls);
+            let news = this.board.refill();
+            await this.animateNewGems(news);
+            this.render();
+            await this.sleep(80);
+        }
+        return anyMatch;
+    }
+    getCellRect(x, y) {
+ 	// cell: 棋盘格子
+ 	// anim-layer: 动画浮层
+  	const cell = this.$board.children[y * SIZE + x];
+  	const animRect = this.$anim.getBoundingClientRect();
+  	const cellRect = cell.getBoundingClientRect();
+ 	return {
+  	    left: cellRect.left - animRect.left,
+ 	    top: cellRect.top - animRect.top,
+ 	    width: cellRect.width,
+ 	    height: cellRect.height
+ 	};
+    }
+    createFloatGem(x,y,type=null) {
+        const {left,top,width,height} = this.getCellRect(x,y);
+        const float = document.createElement('div');
+        float.className = 'float-gem';
+        float.textContent = GEM_TYPES[type!==null?type:this.board.getGem(x,y)]?GEM_TYPES[type!==null?type:this.board.getGem(x,y)].emoji:'';
+        float.style.left = left+'px';
+        float.style.top = top+'px';
+        float.style.width = width+'px';
+        float.style.height = height+'px';
+        float.style.fontSize = width>40?'2.1rem':'1.3rem';
+        float.style.lineHeight = height+'px';
+        float.style.textAlign = "center";
+        float.style.transition = "none";
+        this.$anim.appendChild(float);
+        return float;
+    }
+    animateSwap(from,to) {
+        return new Promise(resolve=>{
+            const float1 = this.createFloatGem(from.x,from.y), float2 = this.createFloatGem(to.x,to.y);
+            const dx = (to.x-from.x)*float1.offsetWidth, dy = (to.y-from.y)*float1.offsetHeight;
+            this.$board.children[from.y*SIZE+from.x].style.visibility="hidden";
+            this.$board.children[to.y*SIZE+to.x].style.visibility="hidden";
+            requestAnimationFrame(()=>{
+                float1.style.transition=float2.style.transition=`transform ${ANIMATION.swap/1000}s cubic-bezier(0.2,0.8,0.4,1.5)`;
+                float1.style.transform=`translate(${dx}px,${dy}px)`;
+                float2.style.transform=`translate(${-dx}px,${-dy}px)`;
+            });
+            setTimeout(()=>{
+                float1.remove(); float2.remove();
+                this.$board.children[from.y*SIZE+from.x].style.visibility="";
+                this.$board.children[to.y*SIZE+to.x].style.visibility="";
+                resolve();
+            },ANIMATION.swap+10);
+        });
+    }
+    animateExplosion(matches) {
+        return new Promise(resolve=>{
+            for(const {x,y} of matches) this.$board.children[y*SIZE+x].style.visibility="hidden";
+            for(const {x,y} of matches) {
+                const {left,top,width,height} = this.getCellRect(x,y);
+                for(let i=0;i<8;i++) {
+                    const px = document.createElement('div');
+                    px.className = 'explosion-pixel';
+                    px.style.background = GEM_TYPES[this.board.getGem(x,y)]?GEM_TYPES[this.board.getGem(x,y)].color:"#fff";
+                    px.style.left=(width/2-5)+'px'; px.style.top=(height/2-5)+'px';
+                    this.$anim.appendChild(px);
+                    const angle=Math.PI*2*(i/8)+(Math.random()-0.5)*0.4, dist=width*0.4+Math.random()*8;
+                    px.style.position='absolute';
+                    px.style.left = (left+width/2-5)+'px'; px.style.top = (top+height/2-5)+'px';
+                    setTimeout(()=>{px.style.transition='transform 0.35s,opacity 0.35s';px.style.transform=`translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px) scale(${0.5+Math.random()*0.5})`;px.style.opacity=0;},15);
+                    setTimeout(()=>{px.remove();}, ANIMATION.explode+10);
+                }
+            }
+            setTimeout(resolve, ANIMATION.explode+10);
+        });
+    }
+    animateFalls(falls) {
+        return new Promise(resolve=>{
+            if(!falls.length){resolve();return;}
+            for(const {from,to,gem} of falls) {
+                const float = this.createFloatGem(from.x,from.y,gem);
+                const dx = (to.x-from.x)*float.offsetWidth, dy = (to.y-from.y)*float.offsetHeight;
+                this.$board.children[from.y*SIZE+from.x].style.visibility="hidden";
+                this.$board.children[to.y*SIZE+to.x].style.visibility="hidden";
+                setTimeout(()=>{
+                    float.style.transition=`transform ${ANIMATION.fall/1000}s cubic-bezier(0.2,0.8,0.4,1.5)`;
+                    float.style.transform=`translate(${dx}px,${dy}px)`;
+                },15);
+                setTimeout(()=>{
+                    float.remove();
+                    this.$board.children[from.y*SIZE+from.x].style.visibility="";
+                    this.$board.children[to.y*SIZE+to.x].style.visibility="";
+                },ANIMATION.fall+10);
+            }
+            setTimeout(resolve,ANIMATION.fall+20);
+        });
+    }
+    animateNewGems(news) {
+        return new Promise(resolve=>{
+            if(!news.length){resolve();return;}
+            for(const {to,type} of news) {
+                // 新宝石从棋盘顶上方落下
+                const cellSize = this.$board.children[0].offsetWidth;
+                const float = this.createFloatGem(to.x, 0, type);
+                float.style.top = (-cellSize)+'px';
+                const dx = 0, dy = to.y*cellSize+cellSize;
+                setTimeout(()=>{
+                    float.style.transition=`transform ${ANIMATION.fall/1000}s cubic-bezier(0.2,0.8,0.4,1.5)`;
+                    float.style.transform=`translate(${dx}px,${dy}px)`;
+                },15);
+                this.$board.children[to.y*SIZE+to.x].style.visibility="hidden";
+                setTimeout(()=>{
+                    float.remove();
+                    this.$board.children[to.y*SIZE+to.x].style.visibility="";
+                },ANIMATION.fall+10);
+            }
+            setTimeout(resolve,ANIMATION.fall+20);
+        });
+    }
+    sleep(ms){return new Promise(res=>setTimeout(res,ms));}
+}
+let GAME = new GemGame();
+</script>
+</body>
+</html>
