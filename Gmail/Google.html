@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业邮箱 - 工作通讯</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        /* Gmail风格的头部 */
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            height: 64px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            color: #5f6368;
+            font-weight: 400;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #1a73e8, #4285f4);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .search-container {
+            background: #f1f3f4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            transition: all 0.2s;
+            flex: 1;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .search-container:focus-within {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            background: none;
+            padding: 12px 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .icon-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* 主容器 */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 64px);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 256px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            padding: 16px 0;
+            overflow-y: auto;
+        }
+
+        .upload-btn {
+            margin: 0 16px 24px;
+            background: #c2e7ff;
+            border: none;
+            border-radius: 16px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            width: calc(100% - 32px);
+        }
+
+        .upload-btn:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            background: #a8daff;
+        }
+
+        .nav-menu {
+            margin-bottom: 24px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background-color: #f1f3f4;
+        }
+
+        .nav-item.active {
+            background-color: #fce8e6;
+            color: #d93025;
+            font-weight: 500;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #d93025;
+        }
+
+        .nav-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+
+        .nav-text {
+            flex: 1;
+        }
+
+        .nav-count {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fff;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* 邮件列表 */
+        .email-list {
+    		flex: 1;
+    		min-height: 0;
+    		max-height: calc(100vh - 130px); /* 130px根据你的头部和工具栏高度调整 */
+    		overflow-y: auto;
+        }
+
+        .email-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .email-item:hover {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            z-index: 1;
+        }
+
+        .email-item.unread {
+            background-color: #fff;
+            font-weight: 500;
+        }
+
+        .email-item.read {
+            background-color: #f8f9fa;
+            color: #5f6368;
+        }
+
+        .email-sender {
+            width: 200px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-subject {
+            flex: 1;
+            font-size: 14px;
+            margin: 0 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-date {
+            font-size: 12px;
+            color: #5f6368;
+            width: 80px;
+            text-align: right;
+        }
+
+        /* 邮件详情页面 */
+        .email-detail {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .email-detail.show {
+            display: flex;
+        }
+
+        .email-header {
+            padding: 24px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fff;
+        }
+
+        .email-title {
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            color: #202124;
+        }
+
+        .email-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .email-body {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            line-height: 1.6;
+            font-size: 14px;
+            color: #202124;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #1a73e8;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .back-btn:hover {
+            background-color: #f1f3f4;
+        }
+
+        /* 分页控件 */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px;
+            border-top: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+
+        .pagination-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #1557b0;
+        }
+
+        .pagination-btn:disabled {
+            background: #dadce0;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            margin: 24px 0;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #202124;
+        }
+
+        .chart-canvas {
+            max-height: 300px;
+        }
+
+        /* 表格样式 */
+        .business-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        .business-table th,
+        .business-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .business-table th {
+            background: #f8f9fa;
+            font-weight: 500;
+            color: #5f6368;
+        }
+
+        .business-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 隐藏的文件输入 */
+        #fileInput {
+            display: none;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #5f6368;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .empty-desc {
+            font-size: 14px;
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -256px;
+                top: 64px;
+                height: calc(100vh - 64px);
+                z-index: 999;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .email-sender {
+                width: 120px;
+            }
+        }
+
+        /* 调试面板 */
+        .debug-panel {
+            position: fixed;
+            top: 70px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10000;
+            display: none;
+            max-width: 300px;
+        }
+
+        .debug-panel.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="gmail-container">
+        <!-- 头部导航栏 -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-btn" id="menuBtn">☰</button>
+                <div class="logo">
+                    <div class="logo-icon">M</div>
+                    <span>企业邮箱</span>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" placeholder="搜索邮件" class="search-input" id="searchInput">
+            </div>
+            <div class="header-right">
+                <button class="icon-btn" id="debugBtn" title="调试模式">🔧</button>
+                <button class="icon-btn">⚙️</button>
+                <div class="profile-avatar">A</div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- 侧边栏 -->
+            <aside class="sidebar" id="sidebar">
+                <button class="upload-btn" id="uploadBtn">
+                    <span>📁</span>
+                    导入文档
+                </button>
+                <input type="file" id="fileInput" accept=".txt" />
+                
+                <nav class="nav-menu">
+                    <div class="nav-item active" data-folder="inbox">
+                        <span class="nav-icon">📥</span>
+                        <span class="nav-text">收件箱</span>
+                        <span class="nav-count" id="inboxCount">0</span>
+                    </div>
+                    <div class="nav-item" data-folder="important">
+                        <span class="nav-icon">⭐</span>
+                        <span class="nav-text">重要邮件</span>
+                    </div>
+                    <div class="nav-item" data-folder="sent">
+                        <span class="nav-icon">📤</span>
+                        <span class="nav-text">已发送</span>
+                    </div>
+                    <div class="nav-item" data-folder="drafts">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">草稿</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- 主内容区域 -->
+            <main class="main-content">
+                <!-- 邮件列表视图 -->
+                <div class="email-list-view" id="emailListView">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <button class="toolbar-btn" id="refreshBtn">🔄 刷新</button>
+                            <button class="toolbar-btn" id="settingsBtn">⚙️ 设置</button>
+                        </div>
+                        <div class="toolbar-right">
+                            <span class="email-count" id="emailCount">共 0 封邮件</span>
+                        </div>
+                    </div>
+
+                    <div class="email-list" id="emailList">
+                        <div class="empty-state">
+                            <div class="empty-icon">📧</div>
+                            <div class="empty-title">暂无邮件</div>
+                            <div class="empty-desc">点击"导入文档"上传小说文件开始阅读</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 邮件详情视图 -->
+                <div class="email-detail" id="emailDetail">
+                    <div class="email-header">
+                        <button class="back-btn" id="backBtn">← 返回收件箱</button>
+                        <div class="email-title" id="emailTitle"></div>
+                        <div class="email-meta">
+                            <span id="emailSender"></span>
+                            <span id="emailDate"></span>
+                        </div>
+                    </div>
+                    <div class="email-body" id="emailBody"></div>
+                    <div class="pagination" id="pagination">
+                        <button class="pagination-btn" id="prevPageBtn">上一页</button>
+                        <span class="pagination-info" id="pageInfo">第 1 页，共 1 页</span>
+                        <button class="pagination-btn" id="nextPageBtn">下一页</button>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <span>正在处理文件...</span>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 调试面板 -->
+    <div class="debug-panel" id="debugPanel">
+        <div>调试信息:</div>
+        <div id="debugInfo"></div>
+    </div>
+
+    <script>
+        /**
+         * 小说阅读器主类
+         * 伪装成Gmail办公邮箱界面的小说阅读器
+         */
+        class NovelEmailReader {
+            constructor() {
+                // 核心数据结构
+                this.chapters = []; // 章节数据
+                this.currentChapter = null; // 当前章节
+                this.currentPage = 1; // 当前页码
+                this.charsPerPage = 1500; // 每页字符数
+                this.debugMode = false; // 调试模式
+                
+                // 业务邮件模板数据
+                this.businessTemplates = {
+                    senders: [
+                        "北斗科技有限公司", "华为技术部", "腾讯产品组", "阿里云服务",
+                        "字节跳动", "美团技术", "滴滴出行", "京东数科", "百度AI",
+                        "小米集团", "OPPO研发", "vivo创新", "网易游戏", "搜狐科技"
+                    ],
+                    subjects: [
+                        "关于项目进度的更新", "季度业绩报告", "技术方案评审",
+                        "产品迭代计划", "市场分析报告", "用户反馈汇总",
+                        "系统优化方案", "数据安全评估", "合作伙伴会议",
+                        "预算审批申请", "人员配置调整", "流程改进建议"
+                    ]
+                };
+                
+                this.init();
+            }
+
+            /**
+             * 初始化应用
+             */
+            init() {
+                this.setupEventListeners();
+                this.updateEmailCount();
+                this.log("应用初始化完成");
+            }
+
+            /**
+             * 设置事件监听器
+             */
+            setupEventListeners() {
+                // 文件上传
+                document.getElementById('uploadBtn').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    this.handleFileUpload(e.target.files[0]);
+                });
+
+                // 导航
+                document.getElementById('backBtn').addEventListener('click', () => {
+                    this.showEmailList();
+                });
+
+                // 分页
+                document.getElementById('prevPageBtn').addEventListener('click', () => {
+                    this.previousPage();
+                });
+
+                document.getElementById('nextPageBtn').addEventListener('click', () => {
+                    this.nextPage();
+                });
+
+                // 搜索
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchChapters(e.target.value);
+                });
+
+                // 调试模式
+                document.getElementById('debugBtn').addEventListener('click', () => {
+                    this.toggleDebugMode();
+                });
+
+                // 菜单按钮（移动端）
+                document.getElementById('menuBtn').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('show');
+                });
+
+                // 刷新按钮
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.renderEmailList();
+                });
+            }
+
+            /**
+             * 处理文件上传
+             * @param {File} file - 上传的文件
+             */
+            async handleFileUpload(file) {
+                if (!file) return;
+
+                if (!file.name.endsWith('.txt')) {
+                    alert('请上传 .txt 格式的文件');
+                    return;
+                }
+
+                this.showLoading(true);
+                this.log(`开始处理文件: ${file.name}`);
+
+                try {
+                    const text = await file.text();
+                    this.parseNovel(text, file.name);
+                    this.renderEmailList();
+                    this.updateEmailCount();
+                    this.log(`文件处理完成，共解析 ${this.chapters.length} 个章节`);
+                } catch (error) {
+                    this.log(`文件处理失败: ${error.message}`);
+                    alert('文件读取失败，请重试');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            /**
+             * 解析小说文本，按章节拆分
+             * @param {string} text - 小说文本
+             * @param {string} filename - 文件名
+             */
+            parseNovel(text, filename) {
+                this.chapters = [];
+                
+                // 多种章节识别模式
+                const chapterPatterns = [
+                    /第[一二三四五六七八九十百千万\d]+[章回节]/g,
+                    /Chapter\s+\d+/gi,
+                    /第\d+章/g,
+                    /第\d+回/g,
+                    /第\d+节/g
+                ];
+
+                let chapters = [];
+                let bestPattern = null;
+                let maxChapters = 0;
+
+                // 尝试不同的章节模式，选择识别出最多章节的模式
+                for (const pattern of chapterPatterns) {
+                    const matches = [...text.matchAll(pattern)];
+                    if (matches.length > maxChapters) {
+                        maxChapters = matches.length;
+                        bestPattern = pattern;
+                        chapters = matches;
+                    }
+                }
+
+                // 如果没有识别到章节标题，按段落分割
+                if (chapters.length === 0) {
+                    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 100);
+                    chapters = paragraphs.map((p, i) => ({
+                        index: i * 1000, // 模拟位置
+                        0: `第${i + 1}段` // 模拟标题
+                    }));
+                    this.log("未识别到章节标题，按段落分割");
+                } else {
+                    this.log(`使用模式识别到 ${chapters.length} 个章节: ${bestPattern}`);
+                }
+
+                // 按章节分割内容
+                for (let i = 0; i < chapters.length; i++) {
+                    const currentMatch = chapters[i];
+                    const nextMatch = chapters[i + 1];
+                    
+                    const startIndex = currentMatch.index || 0;
+                    const endIndex = nextMatch ? nextMatch.index : text.length;
+                    
+                    const chapterTitle = currentMatch[0] || `第${i + 1}章`;
+                    const chapterContent = text.substring(startIndex, endIndex).trim();
+                    
+                    if (chapterContent.length > 50) { // 过滤太短的章节
+                        this.chapters.push({
+                            id: i + 1,
+                            title: chapterTitle,
+                            content: chapterContent,
+                            sender: this.generateBusinessSender(),
+                            subject: this.generateBusinessSubject(),
+                            date: this.generateBusinessDate(),
+                            read: false
+                        });
+                    }
+                }
+
+                this.log(`最终解析出 ${this.chapters.length} 个有效章节`);
+            }
+
+            /**
+             * 生成商务风格的发件人
+             */
+            generateBusinessSender() {
+                const senders = this.businessTemplates.senders;
+                return senders[Math.floor(Math.random() * senders.length)];
+            }
+
+            /**
+             * 生成商务风格的邮件主题
+             */
+            generateBusinessSubject() {
+                const subjects = this.businessTemplates.subjects;
+                const subject = subjects[Math.floor(Math.random() * subjects.length)];
+                const date = new Date().toLocaleDateString('zh-CN');
+                return `${subject} (${date})`;
+            }
+
+            /**
+             * 生成商务风格的日期
+             */
+            generateBusinessDate() {
+                const now = new Date();
+                const randomDays = Math.floor(Math.random() * 30);
+                const date = new Date(now.getTime() - randomDays * 24 * 60 * 60 * 1000);
+                
+                if (randomDays === 0) {
+                    return date.toLocaleTimeString('zh-CN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                } else if (randomDays < 7) {
+                    return date.toLocaleDateString('zh-CN', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                } else {
+                    return date.toLocaleDateString('zh-CN', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                }
+            }
+
+            /**
+             * 渲染邮件列表
+             */
+            renderEmailList() {
+                const emailList = document.getElementById('emailList');
+                
+                if (this.chapters.length === 0) {
+                    emailList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📧</div>
+                            <div class="empty-title">暂无邮件</div>
+                            <div class="empty-desc">点击"导入文档"上传小说文件开始阅读</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                emailList.innerHTML = this.chapters.map(chapter => `
+                    <div class="email-item ${chapter.read ? 'read' : 'unread'}" data-id="${chapter.id}">
+                        <div class="email-sender">${chapter.sender}</div>
+                        <div class="email-subject">${chapter.subject}</div>
+                        <div class="email-date">${chapter.date}</div>
+                    </div>
+                `).join('');
+
+                // 添加点击事件
+                emailList.querySelectorAll('.email-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const chapterId = parseInt(item.dataset.id);
+                        this.openChapter(chapterId);
+                    });
+                });
+            }
+
+            /**
+             * 打开章节
+             * @param {number} chapterId - 章节ID
+             */
+            openChapter(chapterId) {
+                const chapter = this.chapters.find(c => c.id === chapterId);
+                if (!chapter) return;
+
+                chapter.read = true; // 标记为已读
+                this.currentChapter = chapter;
+                this.currentPage = 1;
+                
+                this.showEmailDetail();
+                this.renderChapterContent();
+                this.renderEmailList(); // 更新列表显示已读状态
+                
+                this.log(`打开章节: ${chapter.title}`);
+            }
+
+            /**
+             * 显示邮件详情视图
+             */
+            showEmailDetail() {
+                document.getElementById('emailListView').style.display = 'none';
+                document.getElementById('emailDetail').classList.add('show');
+            }
+
+            /**
+             * 显示邮件列表视图
+             */
+            showEmailList() {
+                document.getElementById('emailListView').style.display = 'block';
+                document.getElementById('emailDetail').classList.remove('show');
+                this.currentChapter = null;
+            }
+
+            /**
+             * 渲染章节内容
+             */
+            renderChapterContent() {
+                if (!this.currentChapter) return;
+
+                const chapter = this.currentChapter;
+                
+                // 更新邮件头部信息
+                document.getElementById('emailTitle').textContent = chapter.subject;
+                document.getElementById('emailSender').textContent = chapter.sender;
+                document.getElementById('emailDate').textContent = chapter.date;
+
+                // 分页处理
+                const content = chapter.content;
+                const totalPages = Math.ceil(content.length / this.charsPerPage);
+                const startIndex = (this.currentPage - 1) * this.charsPerPage;
+                const endIndex = Math.min(startIndex + this.charsPerPage, content.length);
+                const pageContent = content.substring(startIndex, endIndex);
+
+                // 渲染内容（包含商务元素）
+                const emailBody = document.getElementById('emailBody');
+                emailBody.innerHTML = this.generateBusinessContent(pageContent, chapter);
+
+                // 更新分页控件
+                this.updatePagination(totalPages);
+            }
+
+            /**
+             * 生成包含商务元素的内容
+             * @param {string} content - 原始内容
+             * @param {object} chapter - 章节信息
+             */
+            generateBusinessContent(content, chapter) {
+                let businessContent = `
+                    <div style="margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #1a73e8;">
+                        <strong>尊敬的同事，</strong><br><br>
+                        根据最新的项目进展情况，现将相关数据和分析报告整理如下：
+                    </div>
+                `;
+
+                // 随机插入图表或表格
+                const shouldInsertChart = Math.random() > 0.6;
+                const shouldInsertTable = Math.random() > 0.7;
+
+                if (shouldInsertChart) {
+                    businessContent += this.generateChart();
+                }
+
+                // 主要内容
+                businessContent += `<div style="line-height: 1.8; margin: 24px 0;">${content.replace(/\n/g, '<br>')}</div>`;
+
+                if (shouldInsertTable) {
+                    businessContent += this.generateBusinessTable();
+                }
+
+                // 结尾
+                businessContent += `
+                    <div style="margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                        <strong>总结：</strong><br>
+                        以上数据仅供参考，如有疑问请及时沟通。感谢您的关注与支持。<br><br>
+                        此致<br>
+                        敬礼！<br><br>
+                        <em>${chapter.sender}</em><br>
+                        <em>${new Date().toLocaleDateString('zh-CN')}</em>
+                    </div>
+                `;
+
+                return businessContent;
+            }
+
+            /**
+             * 生成图表
+             */
+            generateChart() {
+                const chartId = 'chart_' + Date.now();
+                const chartTypes = ['bar', 'line', 'doughnut'];
+                const chartType = chartTypes[Math.floor(Math.random() * chartTypes.length)];
+                
+                setTimeout(() => {
+                    this.createChart(chartId, chartType);
+                }, 100);
+
+                return `
+                    <div class="chart-container">
+                        <div class="chart-title">📊 ${this.getChartTitle(chartType)}</div>
+                        <canvas id="${chartId}" class="chart-canvas"></canvas>
+                    </div>
+                `;
+            }
+
+            /**
+             * 获取图表标题
+             */
+            getChartTitle(type) {
+                const titles = {
+                    bar: '月度业绩对比图',
+                    line: '用户增长趋势图',
+                    doughnut: '市场份额分布图'
+                };
+                return titles[type] || '数据分析图';
+            }
+
+            /**
+             * 创建Chart.js图表
+             */
+            createChart(canvasId, type) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+
+                const ctx = canvas.getContext('2d');
+                
+                let data, options;
+                
+                switch(type) {
+                    case 'bar':
+                        data = {
+                            labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                            datasets: [{
+                                label: '销售额(万元)',
+                                data: this.generateRandomData(6, 100, 500),
+                                backgroundColor: '#1a73e8',
+                                borderColor: '#1557b0',
+                                borderWidth: 1
+                            }]
+                        };
+                        options = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        };
+                        break;
+                        
+                    case 'line':
+                        data = {
+                            labels: ['第1周', '第2周', '第3周', '第4周', '第5周', '第6周'],
+                            datasets: [{
+                                label: '用户数',
+                                data: this.generateRandomData(6, 1000, 5000),
+                                borderColor: '#34a853',
+                                backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                                tension: 0.4
+                            }]
+                        };
+                        options = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        };
+                        break;
+                        
+                    case 'doughnut':
+                        data = {
+                            labels: ['产品A', '产品B', '产品C', '产品D'],
+                            datasets: [{
+                                data: this.generateRandomData(4, 10, 40),
+                                backgroundColor: ['#1a73e8', '#34a853', '#fbbc05', '#ea4335']
+                            }]
+                        };
+                        options = {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        };
+                        break;
+                }
+
+                new Chart(ctx, {
+                    type: type,
+                    data: data,
+                    options: options
+                });
+            }
+
+            /**
+             * 生成随机数据
+             */
+            generateRandomData(count, min, max) {
+                return Array.from({length: count}, () => 
+                    Math.floor(Math.random() * (max - min + 1)) + min
+                );
+            }
+
+            /**
+             * 生成商务表格
+             */
+            generateBusinessTable() {
+                const tableData = [
+                    ['项目名称', '进度', '负责人', '预计完成'],
+                    ['移动端优化', '85%', '张三', '2024-01-15'],
+                    ['数据分析平台', '92%', '李四', '2024-01-10'],
+                    ['用户体验改进', '76%', '王五', '2024-01-20'],
+                    ['安全性升级', '68%', '赵六', '2024-01-25']
+                ];
+
+                let tableHtml = '<table class="business-table"><thead><tr>';
+                
+                // 表头
+                tableData[0].forEach(header => {
+                    tableHtml += `<th>${header}</th>`;
+                });
+                tableHtml += '</tr></thead><tbody>';
+                
+                // 表格数据
+                for (let i = 1; i < tableData.length; i++) {
+                    tableHtml += '<tr>';
+                    tableData[i].forEach(cell => {
+                        tableHtml += `<td>${cell}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+                
+                tableHtml += '</tbody></table>';
+                
+                return `
+                    <div style="margin: 24px 0;">
+                        <h4 style="margin-bottom: 16px; color: #202124;">📋 项目进度汇总表</h4>
+                        ${tableHtml}
+                    </div>
+                `;
+            }
+
+            /**
+             * 更新分页控件
+             */
+            updatePagination(totalPages) {
+                const pageInfo = document.getElementById('pageInfo');
+                const prevBtn = document.getElementById('prevPageBtn');
+                const nextBtn = document.getElementById('nextPageBtn');
+
+                pageInfo.textContent = `第 ${this.currentPage} 页，共 ${totalPages} 页`;
+                prevBtn.disabled = this.currentPage <= 1;
+                nextBtn.disabled = this.currentPage >= totalPages;
+            }
+
+            /**
+             * 上一页
+             */
+            previousPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderChapterContent();
+                    this.log(`切换到第 ${this.currentPage} 页`);
+                }
+            }
+
+            /**
+             * 下一页
+             */
+            nextPage() {
+                const totalPages = Math.ceil(this.currentChapter.content.length / this.charsPerPage);
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderChapterContent();
+                    this.log(`切换到第 ${this.currentPage} 页`);
+                }
+            }
+
+            /**
+             * 搜索章节
+             * @param {string} query - 搜索关键词
+             */
+            searchChapters(query) {
+                if (!query.trim()) {
+                    this.renderEmailList();
+                    return;
+                }
+
+                const emailList = document.getElementById('emailList');
+                const filteredChapters = this.chapters.filter(chapter =>
+                    chapter.title.toLowerCase().includes(query.toLowerCase()) ||
+                    chapter.subject.toLowerCase().includes(query.toLowerCase()) ||
+                    chapter.content.toLowerCase().includes(query.toLowerCase())
+                );
+
+                if (filteredChapters.length === 0) {
+                    emailList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <div class="empty-title">未找到匹配结果</div>
+                            <div class="empty-desc">尝试使用其他关键词搜索</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                emailList.innerHTML = filteredChapters.map(chapter => `
+                    <div class="email-item ${chapter.read ? 'read' : 'unread'}" data-id="${chapter.id}">
+                        <div class="email-sender">${chapter.sender}</div>
+                        <div class="email-subject">${chapter.subject}</div>
+                        <div class="email-date">${chapter.date}</div>
+                    </div>
+                `).join('');
+
+                // 重新添加点击事件
+                emailList.querySelectorAll('.email-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const chapterId = parseInt(item.dataset.id);
+                        this.openChapter(chapterId);
+                    });
+                });
+
+                this.log(`搜索 "${query}" 找到 ${filteredChapters.length} 个结果`);
+            }
+
+            /**
+             * 更新邮件计数
+             */
+            updateEmailCount() {
+                const totalCount = this.chapters.length;
+                const unreadCount = this.chapters.filter(c => !c.read).length;
+                
+                document.getElementById('emailCount').textContent = `共 ${totalCount} 封邮件`;
+                document.getElementById('inboxCount').textContent = unreadCount > 0 ? unreadCount : '';
+                document.getElementById('inboxCount').style.display = unreadCount > 0 ? 'inline' : 'none';
+            }
+
+            /**
+             * 显示/隐藏加载状态
+             */
+            showLoading(show) {
+                const loading = document.getElementById('loading');
+                if (show) {
+                    loading.classList.add('show');
+                } else {
+                    loading.classList.remove('show');
+                }
+            }
+
+            /**
+             * 切换调试模式
+             */
+            toggleDebugMode() {
+                this.debugMode = !this.debugMode;
+                const debugPanel = document.getElementById('debugPanel');
+                
+                if (this.debugMode) {
+                    debugPanel.classList.add('show');
+                    this.log("调试模式已开启");
+                } else {
+                    debugPanel.classList.remove('show');
+                }
+            }
+
+            /**
+             * 调试日志
+             * @param {string} message - 日志信息
+             */
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logMessage = `[${timestamp}] ${message}`;
+                
+                console.log(logMessage);
+                
+                if (this.debugMode) {
+                    const debugInfo = document.getElementById('debugInfo');
+                    debugInfo.innerHTML = logMessage + '<br>' + debugInfo.innerHTML;
+                    
+                    // 限制显示的日志条数
+                    const lines = debugInfo.innerHTML.split('<br>');
+                    if (lines.length > 10) {
+                        debugInfo.innerHTML = lines.slice(0, 10).join('<br>');
+                    }
+                }
+            }
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            window.novelReader = new NovelEmailReader();
+            
+            // 添加一些快捷键
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+D 切换调试模式
+                if (e.ctrlKey && e.key === 'd') {
+                    e.preventDefault();
+                    window.novelReader.toggleDebugMode();
+                }
+                
+                // ESC 返回列表
+                if (e.key === 'Escape') {
+                    window.novelReader.showEmailList();
+                }
+                
+                // 左右箭头翻页
+                if (window.novelReader.currentChapter) {
+                    if (e.key === 'ArrowLeft') {
+                        window.novelReader.previousPage();
+                    } else if (e.key === 'ArrowRight') {
+                        window.novelReader.nextPage();
+                    }
+                }
+            });
+        });
+
+        // 防止意外关闭页面时丢失阅读进度
+        window.addEventListener('beforeunload', (e) => {
+            if (window.novelReader && window.novelReader.chapters.length > 0) {
+                e.preventDefault();
+                e.returnValue = '确定要离开吗？阅读进度将会丢失。';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>
