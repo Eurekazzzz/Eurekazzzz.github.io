@@ -1,1 +1,179 @@
-<a href="./Gmail/">子网页1</a>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>私人工具站 - 首页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- iOS风格主要色调、圆角、毛玻璃、简洁明亮 -->
+    <style>
+        :root {
+            --primary: #007aff;
+            --bg: #f9f9f9;
+            --card-bg: rgba(255,255,255,0.85);
+            --border: #e5e5ea;
+            --radius: 18px;
+            --shadow: 0 6px 24px 0 rgba(0,0,0,0.07);
+        }
+        body {
+            margin: 0;
+            font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            background: var(--bg);
+            color: #222;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        header {
+            backdrop-filter: blur(18px);
+            background: rgba(255,255,255,0.77);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 0 10px 0;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--primary);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .container {
+            max-width: 480px;
+            margin: 48px auto 0;
+            padding: 0 16px 32px 16px;
+        }
+        .welcome {
+            margin: 32px 0 12px 0;
+            font-size: 1.3rem;
+            color: #444;
+            text-align: center;
+            letter-spacing: 1px;
+            opacity: 0.85;
+        }
+        .tool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .tool-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: box-shadow .2s,transform .2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .tool-card:hover, .tool-card:focus {
+            box-shadow: 0 12px 32px 0 rgba(0,122,255,0.14);
+            transform: translateY(-2px) scale(1.03);
+        }
+        .tool-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #e3f0ff 0%, #cdeaff 60%, #aad3fd 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary);
+            box-shadow: 0 2px 8px 0 rgba(0,122,255,0.09);
+        }
+        .tool-info {
+            flex: 1;
+        }
+        .tool-title {
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #222;
+            letter-spacing: 1px;
+        }
+        .tool-desc {
+            font-size: 0.99rem;
+            color: #666;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+        .arrow {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-left: 10px;
+            opacity: 0.65;
+            transition: margin-left 0.2s;
+        }
+        .tool-card:hover .arrow {
+            margin-left: 18px;
+            opacity: 1;
+        }
+        footer {
+            margin-top: 48px;
+            padding: 18px 0 8px 0;
+            text-align: center;
+            color: #aaa;
+            font-size: 0.98rem;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin-top: 16px;
+                padding: 0 4vw 24px 4vw;
+            }
+            header {
+                font-size: 1.3rem;
+                padding: 18px 0 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        私人工具站
+    </header>
+    <div class="container">
+        <div class="welcome">
+            👋 欢迎来到你的专属工具箱<br>
+            <span style="font-size:0.98rem;color:#888;">适合移动端与桌面端，iOS风格</span>
+        </div>
+        <div class="tool-list">
+            <a class="tool-card" href="./Gmail/" tabindex="0">
+                <div class="tool-icon">📧</div>
+                <div class="tool-info">
+                    <div class="tool-title">伪装办公邮箱小说阅读器</div>
+                    <div class="tool-desc">Gmail风格，偷偷摸摸看小说的利器</div>
+                </div>
+                <span class="arrow">›</span>
+            </a>
+            <a class="tool-card" href="./pictures/" tabindex="0">
+                <div class="tool-icon">🖼️</div>
+                <div class="tool-info">
+                    <div class="tool-title">图片管理/壁纸工具</div>
+                    <div class="tool-desc">私人图库，管理和浏览你的美图</div>
+                </div>
+                <span class="arrow">›</span>
+            </a>
+            <!-- 可以继续添加更多工具入口 -->
+            <!--
+            <a class="tool-card" href="./tools/xxx.html" tabindex="0">
+                <div class="tool-icon">🛠️</div>
+                <div class="tool-info">
+                    <div class="tool-title">工具名称</div>
+                    <div class="tool-desc">工具简要说明</div>
+                </div>
+                <span class="arrow">›</span>
+            </a>
+            -->
+        </div>
+    </div>
+    <footer>
+        &copy; 2025 Eurekazzzz | 用心打造你的iOS风格工具站
+    </footer>
+</body>
+</html>
