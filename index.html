@@ -50,6 +50,14 @@
             letter-spacing: 1px;
             opacity: 0.85;
         }
+        .section-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #999;
+            letter-spacing: 2px;
+            margin: 8px 0 -8px 4px;
+            text-transform: uppercase;
+        }
         .tool-list {
             display: flex;
             flex-direction: column;
@@ -146,6 +154,7 @@
             <span style="font-size:0.98rem;color:#888;"></span>
         </div>
         <div class="tool-list">
+            <div class="section-label">🛠️ 工具区</div>
             <a class="tool-card" href="./Gmail/" tabindex="0">
                 <div class="tool-icon">📧</div>
                 <div class="tool-info">
@@ -154,6 +163,7 @@
                 </div>
                 <span class="arrow">›</span>
             </a>
+            <div class="section-label">🎮 游戏区</div>
             <a class="tool-card" href="./Gem/" tabindex="0">
                 <div class="tool-icon">💎</div>
                 <div class="tool-info">
@@ -162,17 +172,30 @@
                 </div>
                 <span class="arrow">›</span>
             </a>
-            <!-- 可以继续添加更多工具入口 -->
-            <!--
-            <a class="tool-card" href="./tools/xxx.html" tabindex="0">
-                <div class="tool-icon">🛠️</div>
+            <a class="tool-card" href="./snake-game/" tabindex="0">
+                <div class="tool-icon">🐍</div>
                 <div class="tool-info">
-                    <div class="tool-title">工具名称</div>
-                    <div class="tool-desc">工具简要说明</div>
+                    <div class="tool-title">贪吃蛇</div>
+                    <div class="tool-desc">赛博朋克霓虹风格，经典玩法</div>
                 </div>
                 <span class="arrow">›</span>
             </a>
-            -->
+            <a class="tool-card" href="./shooter-game/" tabindex="0">
+                <div class="tool-icon">🔫</div>
+                <div class="tool-info">
+                    <div class="tool-title">战术行动</div>
+                    <div class="tool-desc">Three.js 3D第一人称射击</div>
+                </div>
+                <span class="arrow">›</span>
+            </a>
+            <a class="tool-card" href="./match3-game/" tabindex="0">
+                <div class="tool-icon">⚔️</div>
+                <div class="tool-info">
+                    <div class="tool-title">宝石战争</div>
+                    <div class="tool-desc">像素风三消RPG，4职业7关卡</div>
+                </div>
+                <span class="arrow">›</span>
+            </a>
         </div>
     </div>
     <footer>
