@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>骰子模拟器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        :root {
+            --primary: #007aff;
+            --bg: #f2f2f7;
+            --card: #fff;
+            --border: #e5e5ea;
+            --text: #1c1c1e;
+            --text2: #8e8e93;
+            --radius: 14px;
+            --shadow: 0 1px 4px rgba(0,0,0,0.06);
+            --danger: #ff3b30;
+            --success: #34c759;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            overflow-x: hidden;
+        }
+
+        /* ── Nav Bar ── */
+        .nav {
+            position: sticky; top: 0; z-index: 50;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(249,249,249,0.88);
+            border-bottom: 0.5px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px;
+            height: 50px;
+        }
+        .nav-title { font-size: 1.05rem; font-weight: 600; flex: 1; text-align: center; }
+        .nav-btn {
+            width: 36px; height: 36px; border: none; border-radius: 50%;
+            background: transparent; font-size: 1.15rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary); transition: background 0.15s;
+        }
+        .nav-btn:hover { background: rgba(0,122,255,0.08); }
+        .nav-btn.active { background: rgba(0,122,255,0.12); }
+        .nav-left, .nav-right { display: flex; gap: 2px; min-width: 72px; }
+        .nav-right { justify-content: flex-end; }
+        .nav-back { font-size: 1.5rem; }
+
+        /* ── Pages ── */
+        .page { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
+        .page.active { display: block; }
+
+        /* ── Card ── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 12px 16px 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── iOS-style list rows ── */
+        .row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px;
+            min-height: 44px;
+        }
+        .row + .row { border-top: 0.5px solid var(--border); }
+        .row-label { font-size: 0.95rem; color: var(--text); }
+        .row-value { font-size: 0.95rem; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+
+        /* ── Stepper ── */
+        .stepper {
+            display: flex; align-items: center;
+            border: 1px solid var(--border); border-radius: 10px;
+            overflow: hidden; background: var(--bg);
+        }
+        .stepper-btn {
+            width: 34px; height: 34px; border: none; background: transparent;
+            font-size: 1.15rem; color: var(--primary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.12s;
+        }
+        .stepper-btn:hover { background: rgba(0,122,255,0.08); }
+        .stepper-btn:active { background: rgba(0,122,255,0.15); }
+        .stepper-val {
+            width: 48px; text-align: center; font-size: 1rem; font-weight: 600;
+            border: none; background: transparent; outline: none;
+            font-family: inherit; color: var(--text);
+        }
+
+        /* ── Segmented Control ── */
+        .segmented {
+            display: flex; background: var(--bg);
+            border-radius: 9px; padding: 2px; gap: 0;
+        }
+        .seg-btn {
+            flex: 1; padding: 7px 10px; border: none; border-radius: 7px;
+            font-size: 0.82rem; font-weight: 500; cursor: pointer;
+            background: transparent; color: var(--text); transition: all 0.2s;
+            font-family: inherit; white-space: nowrap;
+        }
+        .seg-btn.active {
+            background: #fff; color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* ── Primary Button ── */
+        .btn-primary {
+            display: block; width: 100%; padding: 14px;
+            border: none; border-radius: var(--radius);
+            background: var(--primary); color: #fff;
+            font-size: 1.05rem; font-weight: 600;
+            cursor: pointer; transition: opacity 0.15s;
+            font-family: inherit; margin-top: 8px;
+        }
+        .btn-primary:active { opacity: 0.85; }
+
+        /* ── Advanced Section (collapsible) ── */
+        .adv-toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; cursor: pointer;
+        }
+        .adv-toggle .arrow { font-size: 0.75rem; color: var(--text2); transition: transform 0.25s; }
+        .adv-toggle.open .arrow { transform: rotate(180deg); }
+        .adv-body { display: none; }
+        .adv-body.open { display: block; }
+
+        /* ── Custom Faces Textarea ── */
+        .faces-textarea {
+            width: 100%; min-height: 60px; padding: 10px 12px;
+            border: 1px solid var(--border); border-radius: 10px;
+            font-size: 0.88rem; font-family: 'SF Mono', Menlo, monospace;
+            resize: vertical; outline: none; background: var(--bg);
+            color: var(--text); margin: 8px 16px 12px;
+            width: calc(100% - 32px);
+        }
+        .faces-textarea:focus { border-color: var(--primary); }
+
+        /* ── Preset Chips ── */
+        .preset-chips {
+            display: flex; gap: 8px; padding: 8px 16px 14px;
+            overflow-x: auto; -webkit-overflow-scrolling: touch;
+        }
+        .preset-chip {
+            flex-shrink: 0; padding: 7px 14px;
+            border: 1px solid var(--border); border-radius: 20px;
+            font-size: 0.82rem; cursor: pointer; background: transparent;
+            color: var(--text); transition: all 0.15s; font-family: inherit;
+            white-space: nowrap;
+        }
+        .preset-chip:hover { border-color: var(--primary); color: var(--primary); }
+        .preset-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        /* ═══ Rolling Page ═══ */
+        .config-summary {
+            text-align: center; padding: 8px 0 4px;
+            font-size: 0.88rem; color: var(--text2);
+            font-family: 'SF Mono', Menlo, monospace;
+        }
+        .mode-badge {
+            display: inline-block; padding: 2px 8px;
+            border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+            background: rgba(0,122,255,0.1); color: var(--primary);
+            margin-left: 6px;
+        }
+
+        /* ── Dice Display ── */
+        .dice-display {
+            min-height: 120px;
+            display: flex; flex-wrap: wrap;
+            gap: 10px; justify-content: center; align-items: center;
+            padding: 16px 8px;
+            perspective: 800px;
+        }
+        .dice-display.empty::after {
+            content: '点击下方按钮投掷'; color: #ccc; font-size: 0.9rem;
+        }
+
+        .die {
+            width: 56px; height: 56px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 800; color: #fff;
+            position: relative; cursor: default;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.22, 0.68, 0.35, 1.2);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+        .die.rolling { animation: dieShake 0.4s ease-in-out; }
+        .die.dropped { opacity: 0.3; }
+        .die.dropped::after {
+            content: ''; position: absolute; top: 50%; left: 8%; right: 8%;
+            height: 2px; background: rgba(255,255,255,0.7);
+        }
+        .die.exploded::before {
+            content: '💥'; position: absolute; top: -6px; right: -6px; font-size: 0.55rem;
+        }
+        .die .die-back {
+            position: absolute; inset: 0; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; transform: rotateY(180deg);
+            backface-visibility: hidden;
+        }
+        .die .die-front {
+            backface-visibility: hidden;
+        }
+        .die.flipped { transform: rotateY(180deg); }
+
+        @keyframes dieShake {
+            0%, 100% { transform: translate(0,0) rotate(0); }
+            15% { transform: translate(-3px,-1px) rotate(-4deg); }
+            30% { transform: translate(2px,1px) rotate(3deg); }
+            45% { transform: translate(-2px,2px) rotate(-2deg); }
+            60% { transform: translate(3px,-1px) rotate(4deg); }
+            75% { transform: translate(-1px,1px) rotate(-3deg); }
+        }
+
+        /* ── Result Summary ── */
+        .result-box {
+            text-align: center; padding: 12px 16px;
+            border-top: 0.5px solid var(--border);
+        }
+        .result-total {
+            font-size: 2.6rem; font-weight: 800; color: var(--primary);
+            line-height: 1.1; transition: color 0.3s;
+        }
+        .result-expr {
+            font-size: 0.82rem; color: var(--text2); margin-top: 2px;
+            font-family: 'SF Mono', Menlo, monospace;
+        }
+        .result-details {
+            display: flex; justify-content: center; gap: 16px;
+            margin-top: 6px; font-size: 0.8rem; color: var(--text2);
+        }
+        .result-success {
+            margin-top: 8px; padding: 8px; border-radius: 10px;
+            font-weight: 600; font-size: 0.95rem;
+        }
+        .result-coc {
+            margin-top: 8px; padding: 10px; border-radius: 10px;
+            font-weight: 700; font-size: 1.05rem; text-align: center;
+        }
+        .coc-critical { background: rgba(255,204,0,0.15); color: #b8860b; }
+        .coc-extreme { background: rgba(0,122,255,0.1); color: #005ecb; }
+        .coc-hard { background: rgba(52,199,89,0.1); color: #1b7a34; }
+        .coc-regular { background: rgba(52,199,89,0.06); color: #34c759; }
+        .coc-fail { background: rgba(255,59,48,0.06); color: #ff3b30; }
+        .coc-fumble { background: rgba(255,59,48,0.15); color: #cc0000; }
+
+        /* ── Dark Roll ── */
+        .dark-overlay {
+            display: none; position: absolute; inset: 0;
+            background: rgba(0,0,0,0.8); border-radius: var(--radius);
+            align-items: center; justify-content: center;
+            cursor: pointer; z-index: 5; color: #fff;
+            font-size: 1rem; font-weight: 500;
+        }
+        .dark-overlay.show { display: flex; }
+        .roll-area { position: relative; }
+
+        /* ── Roll Button ── */
+        .roll-btn {
+            display: block; width: 100%; padding: 16px;
+            border: none; border-radius: var(--radius);
+            background: var(--primary); color: #fff;
+            font-size: 1.15rem; font-weight: 700;
+            cursor: pointer; transition: transform 0.12s, opacity 0.12s;
+            font-family: inherit; margin: 4px 0 12px;
+            letter-spacing: 1px;
+        }
+        .roll-btn:active { transform: scale(0.97); opacity: 0.9; }
+        .roll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── History ── */
+        .history-section { margin-top: 8px; }
+        .history-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; font-size: 0.78rem; font-weight: 600;
+            color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .history-clear {
+            font-size: 0.78rem; color: var(--danger); cursor: pointer;
+            background: none; border: none; font-family: inherit;
+        }
+        .history-list { max-height: 200px; overflow-y: auto; }
+        .history-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; font-size: 0.84rem;
+        }
+        .history-item + .history-item { border-top: 0.5px solid var(--border); }
+        .h-time { color: #ccc; font-size: 0.75rem; min-width: 44px; }
+        .h-expr { color: var(--primary); font-weight: 600; font-family: 'SF Mono', Menlo, monospace; }
+        .h-dice { color: var(--text2); flex: 1; font-size: 0.8rem; }
+        .h-total { color: var(--text); font-weight: 700; min-width: 36px; text-align: right; }
+
+        /* ── Modal ── */
+        .modal-bg {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.35); z-index: 100;
+            align-items: center; justify-content: center;
+        }
+        .modal-bg.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: var(--radius);
+            padding: 20px; width: 88vw; max-width: 360px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+        }
+        .modal-title {
+            font-size: 1.05rem; font-weight: 600;
+            margin-bottom: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-close {
+            width: 28px; height: 28px; border: none; border-radius: 50%;
+            background: var(--bg); font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; color: var(--text2);
+        }
+        .modal-input {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid var(--border); border-radius: 10px;
+            font-size: 0.95rem; outline: none; margin-bottom: 12px;
+            font-family: inherit;
+        }
+        .modal-input:focus { border-color: var(--primary); }
+
+        .shortcut-row {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 0.5px solid var(--border);
+            font-size: 0.88rem;
+        }
+        .shortcut-row:last-child { border-bottom: none; }
+        .shortcut-key {
+            background: var(--bg); padding: 2px 8px; border-radius: 5px;
+            font-family: 'SF Mono', Menlo, monospace; font-size: 0.8rem; font-weight: 600;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(60px);
+            background: rgba(0,0,0,0.8); color: #fff;
+            padding: 10px 22px; border-radius: 22px;
+            font-size: 0.88rem; z-index: 200;
+            transition: transform 0.25s ease;
+            pointer-events: none; white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 380px) {
+            .die { width: 48px; height: 48px; font-size: 1.2rem; }
+            .result-total { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════ Settings Page ════════════ -->
+<div class="page active" id="pageSettings">
+    <div class="nav">
+        <div class="nav-left"><a href="../" class="nav-btn nav-back" title="首页">←</a></div>
+        <div class="nav-title">设置骰子</div>
+        <div class="nav-right">
+            <button class="nav-btn" id="btnSoundS" title="音效">🔊</button>
+        </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card">
+        <div class="card-header">自定义</div>
+        <div class="row">
+            <span class="row-label">骰子数量</span>
+            <div class="stepper" data-input="sCount">
+                <button class="stepper-btn" data-act="dec">−</button>
+                <input class="stepper-val" id="sCount" type="number" value="2" min="1" max="99">
+                <button class="stepper-btn" data-act="inc">+</button>
+            </div>
+        </div>
+        <div class="row">
+            <span class="row-label">面数</span>
+            <div class="stepper" data-input="sFaces">
+                <button class="stepper-btn" data-act="dec">−</button>
+                <input class="stepper-val" id="sFaces" type="number" value="12" min="2" max="1000">
+                <button class="stepper-btn" data-act="inc">+</button>
+            </div>
+        </div>
+        <div class="row">
+            <span class="row-label">修正值</span>
+            <div class="stepper" data-input="sMod">
+                <button class="stepper-btn" data-act="dec">−</button>
+                <input class="stepper-val" id="sMod" type="number" value="0">
+                <button class="stepper-btn" data-act="inc">+</button>
+            </div>
+        </div>
+        <div class="row">
+            <span class="row-label">面值</span>
+            <div class="segmented" style="width:200px">
+                <button class="seg-btn" data-face="std">标准</button>
+                <button class="seg-btn" data-face="fudge">命运</button>
+                <button class="seg-btn active" data-face="custom">自定义</button>
+            </div>
+        </div>
+        <div id="customRow">
+            <textarea class="faces-textarea" id="sCustomFaces"
+                      placeholder="每行一个整数，如:&#10;1&#10;2&#10;-1&#10;0">0,0,0,1,1,1,2,2,2,3,3,3</textarea>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="adv-toggle" id="advToggle">
+            <span class="row-label" style="color:var(--primary)">高级功能</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="adv-body" id="advBody">
+            <div class="card-header">模式</div>
+            <div class="row">
+                <div class="segmented" style="width:100%;flex-wrap:wrap">
+                    <button class="seg-btn active" data-mode="normal">普通</button>
+                    <button class="seg-btn" data-mode="advantage">优势</button>
+                    <button class="seg-btn" data-mode="disadvantage">劣势</button>
+                    <button class="seg-btn" data-mode="dropLowest">去最低</button>
+                    <button class="seg-btn" data-mode="dropHighest">去最高</button>
+                    <button class="seg-btn" data-mode="success">成功计数</button>
+                    <button class="seg-btn" data-mode="exploding">爆裂骰</button>
+                </div>
+            </div>
+            <div id="modeParamRow" class="row" style="display:none">
+                <span class="row-label" id="modeParamLabel">阈值</span>
+                <div class="stepper" data-input="sModeVal">
+                    <button class="stepper-btn" data-act="dec">−</button>
+                    <input class="stepper-val" id="sModeVal" type="number" value="1" min="0">
+                    <button class="stepper-btn" data-act="inc">+</button>
+                </div>
+            </div>
+
+            <div class="card-header">CoC 检定</div>
+            <div class="row">
+                <span class="row-label">技能值</span>
+                <div class="stepper" data-input="sCoC">
+                    <button class="stepper-btn" data-act="dec">−</button>
+                    <input class="stepper-val" id="sCoC" type="number" value="50" min="1" max="99">
+                    <button class="stepper-btn" data-act="inc">+</button>
+                </div>
+            </div>
+            <div style="padding:4px 16px 12px">
+                <button class="btn-primary" id="btnCoC" style="margin:0;background:#5856d6">🕵️ CoC 检定 (d100)</button>
+            </div>
+
+            <div class="card-header">预设</div>
+            <div class="preset-chips" id="presetChips"></div>
+            <div style="padding:4px 16px 14px;display:flex;gap:8px">
+                <button class="btn-primary" id="btnSavePreset" style="margin:0;background:transparent;color:var(--primary);border:1px solid var(--primary)">💾 保存为预设</button>
+            </div>
+
+            <div class="card-header">表达式</div>
+            <div style="padding:4px 16px 14px;display:flex;gap:8px">
+                <input class="modal-input" id="sExpr" placeholder="如 2d6+1d20+3" style="margin:0;flex:1">
+                <button class="btn-primary" id="btnExprRoll" style="margin:0;width:auto;padding:10px 20px">投掷</button>
+            </div>
+
+            <div class="row">
+                <span class="row-label">暗骰模式</span>
+                <div class="segmented" style="width:120px">
+                    <button class="seg-btn active" data-dark="off">关</button>
+                    <button class="seg-btn" data-dark="on">开</button>
+                </div>
+            </div>
+            <div class="row">
+                <span class="row-label">快捷键</span>
+                <button class="nav-btn" id="btnShowShortcuts" style="font-size:0.9rem">⌨️</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-primary" id="btnGoRoll">确认 → 进入投掷</button>
+    <div style="height:24px"></div>
+</div>
+
+<!-- ════════════ Rolling Page ════════════ -->
+<div class="page" id="pageRolling">
+    <div class="nav">
+        <div class="nav-left"><button class="nav-btn nav-back" id="btnBackSettings">←</button></div>
+        <div class="nav-title">投掷</div>
+        <div class="nav-right">
+            <button class="nav-btn" id="btnSoundR" title="音效">🔊</button>
+            <button class="nav-btn" id="btnShare" title="分享">🔗</button>
+        </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="config-summary" id="configSummary"></div>
+
+    <div class="card roll-area">
+        <div class="dice-display empty" id="diceDisplay"></div>
+        <div class="result-box" id="resultBox" style="display:none">
+            <div class="result-total" id="rTotal"></div>
+            <div class="result-expr" id="rExpr"></div>
+            <div class="result-details" id="rDetails"></div>
+            <div id="rExtra"></div>
+        </div>
+        <div class="dark-overlay" id="darkOverlay">🔒 暗骰 — 点击揭示</div>
+    </div>
+
+    <button class="roll-btn" id="btnRoll">🎲 投 掷</button>
+
+    <div class="card history-section">
+        <div class="history-header">
+            <span>历史 (<span id="hCount">0</span>)</span>
+            <button class="history-clear" id="btnClearHist">清空</button>
+        </div>
+        <div class="history-list" id="hList"></div>
+    </div>
+
+    <div style="height:24px"></div>
+</div>
+
+<!-- ═══ Modals ═══ -->
+<div class="modal-bg" id="mShortcuts">
+    <div class="modal">
+        <div class="modal-title">⌨️ 快捷键 <button class="modal-close" data-close>✕</button></div>
+        <div id="shortcutBody"></div>
+    </div>
+</div>
+<div class="modal-bg" id="mPreset">
+    <div class="modal">
+        <div class="modal-title">💾 保存预设</div>
+        <input class="modal-input" id="presetInput" placeholder="预设名称">
+        <button class="btn-primary" id="btnConfirmPreset">保存</button>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   Constants
+   ══════════════════════════════════════════════ */
+const DICE_COLORS = { 4:'#ff3b30', 6:'#007aff', 8:'#34c759', 10:'#af52de', 12:'#ff9500', 20:'#ffcc00', 100:'#5856d6' };
+const SHORTCUTS = [
+    ['4/6/8', 'd4 / d6 / d8'], ['0', 'd10'], ['2', 'd12'],
+    ['T', 'd20'], ['H', 'd100'], ['Space', '重掷'], ['Esc', '返回']
+];
+const BUILTINS = [
+    { id:'_dnd', name:'DND属性', expr:'4d6', mode:'dropLowest', mp:{dropCount:1} },
+    { id:'_coc', name:'CoC检定', expr:'1d100', mode:'normal', mp:{} },
+    { id:'_sr', name:'暗影狂奔', expr:'6d6', mode:'success', mp:{threshold:5} },
+    { id:'_fudge', name:'命运骰', expr:'4dF', mode:'normal', mp:{} },
+];
+
+/* ══════════════════════════════════════════════
+   Utilities
+   ══════════════════════════════════════════════ */
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function randInt(lo, hi) { const a = new Uint32Array(1); crypto.getRandomValues(a); return lo + (a[0] % (hi - lo + 1)); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function fmtTime(ts) { const d = new Date(ts); return [d.getHours(),d.getMinutes(),d.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':'); }
+function stdFaces(n) { const a = []; for (let i = 1; i <= n; i++) a.push(i); return a; }
+function fudgeFaces() { return [-1,-1,0,0,1,1]; }
+function dieColor(faceLen) { return DICE_COLORS[faceLen] || '#007aff'; }
+
+/* ══════════════════════════════════════════════
+   DiceEngine
+   ══════════════════════════════════════════════ */
+const DiceEngine = {
+    roll(faces) { return faces[randInt(0, faces.length - 1)]; },
+
+    rollGroup(count, faces) {
+        const r = [];
+        for (let i = 0; i < count; i++)
+            r.push({ value: this.roll(faces), dropped: false, exploded: false });
+        return r;
+    },
+
+    explode(faces, maxRerolls) {
+        const r = []; const mx = Math.max(...faces); let n = 0, v;
+        do { v = this.roll(faces); r.push({ value: v, dropped: false, exploded: v === mx }); n++; }
+        while (v === mx && n <= maxRerolls);
+        return r;
+    },
+
+    execute(cfg) {
+        const groups = cfg.groups.map(g => {
+            let dice;
+            if (cfg.mode === 'exploding') {
+                dice = [];
+                for (let i = 0; i < g.count; i++) dice.push(...this.explode(g.faces, cfg.mp?.maxRerolls || 3));
+            } else {
+                dice = this.rollGroup(g.count, g.faces);
+            }
+            return { label: g.label, faces: g.faces, dice };
+        });
+
+        let all = groups.flatMap(g => g.dice);
+        let dropped = [];
+
+        if (cfg.mode === 'dropLowest' || cfg.mode === 'dropHighest') {
+            const dc = cfg.mp?.dropCount || 1;
+            const active = all.filter(d => !d.dropped);
+            active.sort((a, b) => cfg.mode === 'dropLowest' ? a.value - b.value : b.value - a.value);
+            for (let i = 0; i < Math.min(dc, active.length); i++) { active[i].dropped = true; dropped.push(active[i]); }
+        }
+
+        const active = all.filter(d => !d.dropped);
+        const sub = active.reduce((s, d) => s + d.value, 0);
+        const total = sub + (cfg.modifier || 0);
+        const vals = active.map(d => d.value);
+        let successes = null;
+        if (cfg.mode === 'success') successes = active.filter(d => d.value >= (cfg.mp?.threshold || 5)).length;
+
+        groups.forEach(g => { g.subtotal = g.dice.filter(d => !d.dropped).reduce((s, d) => s + d.value, 0); });
+
+        return {
+            id: Date.now() + '_' + Math.random().toString(36).slice(2,5),
+            ts: Date.now(), expr: cfg.expr, groups, modifier: cfg.modifier || 0,
+            total, min: vals.length ? Math.min(...vals) : 0, max: vals.length ? Math.max(...vals) : 0,
+            dropped, successes, coc: null
+        };
+    },
+
+    coc(roll, skill) {
+        if (roll === 1) return { level:'critical', label:'大成功', emoji:'🌟' };
+        if (skill < 50 && roll >= 96) return { level:'fumble', label:'大失败', emoji:'💀' };
+        if (roll === 100) return { level:'fumble', label:'大失败', emoji:'💀' };
+        if (roll <= Math.floor(skill / 5)) return { level:'extreme', label:'极难成功', emoji:'💫' };
+        if (roll <= Math.floor(skill / 2)) return { level:'hard', label:'困难成功', emoji:'✨' };
+        if (roll <= skill) return { level:'regular', label:'普通成功', emoji:'✅' };
+        return { level:'fail', label:'失败', emoji:'❌' };
+    }
+};
+
+/* ══════════════════════════════════════════════
+   ExpressionParser
+   ══════════════════════════════════════════════ */
+function parseExpr(input) {
+    const tokens = []; let i = 0;
+    while (i < input.length) {
+        const c = input[i];
+        if (c === ' ' || c === '\t') { i++; continue; }
+        if (c >= '0' && c <= '9') { let n=''; while (i < input.length && input[i] >= '0' && input[i] <= '9') n += input[i++]; tokens.push({t:'N',v:+n}); }
+        else if (c==='d'||c==='D') { tokens.push({t:'D'}); i++; }
+        else if (c==='f'||c==='F') { tokens.push({t:'F'}); i++; }
+        else if (c==='+') { tokens.push({t:'+'}); i++; }
+        else if (c==='-') { tokens.push({t:'-'}); i++; }
+        else if (c==='[') { tokens.push({t:'['}); i++; }
+        else if (c===']') { tokens.push({t:']'}); i++; }
+        else if (c===',') { tokens.push({t:','}); i++; }
+        else i++;
+    }
+    tokens.push({t:'E'});
+
+    let pos = 0;
+    const peek = () => tokens[pos] || {t:'E'};
+    const next = () => tokens[pos++];
+
+    function parseTerm() {
+        let count = 1;
+        if (peek().t === 'N' && tokens[pos+1]?.t === 'D') count = next().v;
+        else if (peek().t === 'N') return { type:'num', value: next().v };
+        if (peek().t === 'D') next(); else return { type:'num', value: count };
+
+        let faces, label;
+        if (peek().t === 'F') { next(); faces = fudgeFaces(); label = count + 'dF'; }
+        else if (peek().t === '[') {
+            next(); faces = [];
+            while (peek().t !== ']' && peek().t !== 'E') {
+                let sign = 1;
+                if (peek().t === '-') { sign = -1; next(); }
+                if (peek().t === 'N') faces.push(sign * next().v);
+                if (peek().t === ',') next();
+            }
+            if (peek().t === ']') next();
+            label = count + 'd[' + faces.join(',') + ']';
+        } else if (peek().t === 'N') { const n = next().v; faces = stdFaces(n); label = count + 'd' + n; }
+        else { faces = stdFaces(6); label = count + 'd6'; }
+        return { type:'dice', group:{ count: clamp(count,1,99), faces, label } };
+    }
+
+    const groups = []; let mod = 0;
+    const first = parseTerm();
+    if (first.type === 'dice') groups.push(first.group); else mod += first.value;
+
+    while (peek().t === '+' || peek().t === '-') {
+        const sign = next().t === '-' ? -1 : 1;
+        const term = parseTerm();
+        if (term.type === 'dice') { if (sign<0) term.group.label = '-'+term.group.label; groups.push(term.group); }
+        else mod += sign * term.value;
+    }
+
+    let expr = '';
+    groups.forEach((g, i) => { expr += (i===0||g.label.startsWith('-')) ? g.label : '+'+g.label; });
+    if (mod > 0) expr += '+' + mod; else if (mod < 0) expr += mod;
+
+    // d100 expansion
+    const expanded = [];
+    groups.forEach(g => {
+        if (g.faces.length === 100 && g.label.includes('d100') && !g.label.includes('[')) {
+            for (let i = 0; i < g.count; i++) {
+                expanded.push({ count:1, faces:[0,10,20,30,40,50,60,70,80,90], label:'十位', d100:'tens' });
+                expanded.push({ count:1, faces:[0,1,2,3,4,5,6,7,8,9], label:'个位', d100:'ones' });
+            }
+        } else expanded.push(g);
+    });
+
+    return { groups: expanded, modifier: mod, expr, mode:'normal', mp:{} };
+}
+
+/* ══════════════════════════════════════════════
+   Sound
+   ══════════════════════════════════════════════ */
+const Sound = {
+    on: true, ctx: null,
+    init() { if (!this.ctx) try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { this.on = false; } },
+    roll() {
+        if (!this.on || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        for (let i = 0; i < 4; i++) this._burst(t + i*0.05, 0.03, 0.2 - i*0.04);
+    },
+    land() {
+        if (!this.on || !this.ctx) return;
+        const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type='sine'; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(55,t+0.1);
+        g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+        o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t+0.12);
+    },
+    click() {
+        if (!this.on || !this.ctx) return;
+        const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type='sine'; o.frequency.value=800;
+        g.gain.setValueAtTime(0.08,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.04);
+        o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t+0.04);
+    },
+    _burst(start, dur, vol) {
+        const sr = this.ctx.sampleRate, buf = this.ctx.createBuffer(1, sr*dur|0, sr), d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1)*vol;
+        const s = this.ctx.createBufferSource(); s.buffer = buf;
+        const f = this.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200; f.Q.value=1.5;
+        const g = this.ctx.createGain(); g.gain.setValueAtTime(vol,start); g.gain.exponentialRampToValueAtTime(0.001,start+dur);
+        s.connect(f).connect(g).connect(this.ctx.destination); s.start(start); s.stop(start+dur);
+    }
+};
+
+/* ══════════════════════════════════════════════
+   State
+   ══════════════════════════════════════════════ */
+const S = {
+    count: 2, faces: 12, modifier: 0, faceMode: 'custom', customFaces: [0,0,0,1,1,1,2,2,2,3,3,3],
+    mode: 'normal', mp: {},
+    cocSkill: 50, dark: false,
+    lastCfg: null, lastResult: null, rolling: false, darkRevealed: false,
+    history: [],
+    presets: JSON.parse(localStorage.getItem('dice_presets_v2') || '[]')
+};
+
+function buildConfig() {
+    let faces;
+    if (S.faceMode === 'fudge') faces = fudgeFaces();
+    else if (S.faceMode === 'custom' && S.customFaces) faces = S.customFaces;
+    else faces = stdFaces(S.faces);
+
+    const label = S.count + 'd' + (S.faceMode==='fudge'?'F': S.faceMode==='custom'?'['+faces.join(',')+']' : S.faces);
+    const groups = [{ count: S.count, faces, label }];
+
+    // d100 expansion
+    const expanded = [];
+    groups.forEach(g => {
+        if (g.faces.length === 100 && g.label.includes('d100') && !g.label.includes('[')) {
+            expanded.push({ count:1, faces:[0,10,20,30,40,50,60,70,80,90], label:'十位', d100:'tens' });
+            expanded.push({ count:1, faces:[0,1,2,3,4,5,6,7,8,9], label:'个位', d100:'ones' });
+        } else expanded.push(g);
+    });
+
+    let expr = label;
+    if (S.modifier > 0) expr += '+' + S.modifier; else if (S.modifier < 0) expr += S.modifier;
+
+    return { groups: expanded, modifier: S.modifier, expr, mode: S.mode, mp: S.mp };
+}
+
+function modeLabel(m) {
+    const map = { normal:'普通', advantage:'优势', disadvantage:'劣势', dropLowest:'去最低', dropHighest:'去最高', success:'成功计数', exploding:'爆裂骰' };
+    return map[m] || m;
+}
+
+/* ══════════════════════════════════════════════
+   Rendering
+   ══════════════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    $(id).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function renderSummary() {
+    const cfg = S.lastCfg || buildConfig();
+    let txt = cfg.expr;
+    if (cfg.mode !== 'normal') txt += ' <span class="mode-badge">' + modeLabel(cfg.mode) + '</span>';
+    $('configSummary').innerHTML = txt;
+}
+
+function renderDice(result) {
+    const display = $('diceDisplay');
+    display.innerHTML = '';
+    display.classList.remove('empty');
+
+    result.groups.forEach((g, gi) => {
+        const color = g.d100 ? '#5856d6' : dieColor(g.faces.length);
+        g.dice.forEach((d, di) => {
+            const el = document.createElement('div');
+            el.className = 'die' + (d.dropped ? ' dropped' : '') + (d.exploded ? ' exploded' : '');
+            el.style.background = color;
+            el.textContent = '?';
+
+            const back = document.createElement('div');
+            back.className = 'die-back';
+            back.style.background = color;
+            back.textContent = d.value;
+            el.appendChild(back);
+
+            display.appendChild(el);
+        });
+    });
+}
+
+function revealDiceValues() {
+    $('diceDisplay').querySelectorAll('.die').forEach(el => el.classList.add('flipped'));
+}
+
+async function animateDice(result) {
+    const dice = $('diceDisplay').querySelectorAll('.die');
+    Sound.init(); Sound.roll();
+
+    dice.forEach(d => { d.classList.add('rolling'); d.textContent = '?'; });
+    await sleep(400);
+    dice.forEach(d => d.classList.remove('rolling'));
+
+    Sound.land();
+
+    // Flip all with stagger
+    const arr = Array.from(dice);
+    await Promise.all(arr.map((el, i) => new Promise(r => {
+        setTimeout(() => { el.classList.add('flipped'); setTimeout(r, 500); }, i * 60);
+    })));
+}
+
+function showResult(result) {
+    const box = $('resultBox');
+    box.style.display = '';
+
+    $('rTotal').textContent = result.total;
+    const modStr = result.modifier > 0 ? ' + '+result.modifier : result.modifier < 0 ? ' '+result.modifier : '';
+    $('rExpr').textContent = result.expr + modStr + ' = ' + result.total;
+
+    const details = [];
+    const allActive = result.groups.flatMap(g => g.dice).filter(d => !d.dropped);
+    if (allActive.length > 1) { details.push('最高 '+result.max); details.push('最低 '+result.min); }
+    if (result.dropped.length) details.push('丢弃 '+result.dropped.map(d=>d.value).join(','));
+    $('rDetails').innerHTML = details.map(d => '<span>'+d+'</span>').join('');
+
+    const extra = $('rExtra');
+    extra.innerHTML = '';
+    if (result.successes != null) {
+        extra.innerHTML = '<div class="result-success" style="background:rgba(52,199,89,0.1);color:#34c759">成功数: '+result.successes+'</div>';
+    }
+    if (result.coc) {
+        extra.innerHTML = '<div class="result-coc coc-'+result.coc.level+'">'+result.coc.emoji+' '+result.coc.label+' ('+result.total+')</div>';
+    }
+}
+
+function renderHistory() {
+    $('hCount').textContent = S.history.length;
+    $('hList').innerHTML = S.history.map(r => {
+        const dice = r.groups.map(g => '[' + g.dice.map(d => d.dropped?'~'+d.value:d.value).join(', ') + ']').join(' ');
+        const mod = r.modifier > 0 ? '+'+r.modifier : r.modifier < 0 ? ''+r.modifier : '';
+        return '<div class="history-item">' +
+            '<span class="h-time">'+fmtTime(r.ts)+'</span>' +
+            '<span class="h-expr">'+r.expr+'</span>' +
+            '<span class="h-dice">'+dice+mod+'</span>' +
+            '<span class="h-total">= '+r.total+'</span></div>';
+    }).join('');
+}
+
+function renderPresets() {
+    const all = [...BUILTINS, ...S.presets];
+    $('presetChips').innerHTML = all.map(p =>
+        '<button class="preset-chip" data-pid="'+p.id+'">'+p.name+'</button>'
+    ).join('') + S.presets.map(p =>
+        ' <button class="preset-chip" data-pdel="'+p.id+'" style="color:var(--danger);border-color:var(--danger)">✕</button>'
+    ).join('');
+}
+
+function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function updateSoundBtns() {
+    const icon = Sound.on ? '🔊' : '🔇';
+    $('btnSoundS').textContent = icon;
+    $('btnSoundR').textContent = icon;
+    $('btnSoundS').classList.toggle('active', Sound.on);
+    $('btnSoundR').classList.toggle('active', Sound.on);
+}
+
+/* ══════════════════════════════════════════════
+   Core Roll
+   ══════════════════════════════════════════════ */
+async function doRoll(cfg) {
+    if (S.rolling) return;
+    S.rolling = true;
+    $('btnRoll').disabled = true;
+    Sound.init();
+
+    try {
+        if (!cfg) cfg = S.lastCfg || buildConfig();
+        S.lastCfg = cfg;
+
+        let result;
+        if (cfg.mode === 'advantage') {
+            const r1 = DiceEngine.execute(cfg), r2 = DiceEngine.execute(cfg);
+            result = r1.total >= r2.total ? r1 : r2;
+        } else if (cfg.mode === 'disadvantage') {
+            const r1 = DiceEngine.execute(cfg), r2 = DiceEngine.execute(cfg);
+            result = r1.total <= r2.total ? r1 : r2;
+        } else {
+            result = DiceEngine.execute(cfg);
+        }
+
+        S.lastResult = result;
+        renderDice(result);
+        $('resultBox').style.display = 'none';
+        $('rExtra').innerHTML = '';
+
+        if (S.dark && !S.darkRevealed) {
+            $('darkOverlay').classList.add('show');
+            await animateDice(result);
+        } else {
+            await animateDice(result);
+            showResult(result);
+        }
+
+        S.history.unshift(result);
+        if (S.history.length > 50) S.history.pop();
+        renderHistory();
+    } catch (e) {
+        console.error('Roll error:', e);
+        toast('投掷出错: ' + e.message);
+    }
+
+    S.rolling = false;
+    $('btnRoll').disabled = false;
+}
+
+async function doCoC() {
+    if (S.rolling) return;
+    const cfg = {
+        groups: [
+            { count:1, faces:[0,10,20,30,40,50,60,70,80,90], label:'十位', d100:'tens' },
+            { count:1, faces:[0,1,2,3,4,5,6,7,8,9], label:'个位', d100:'ones' }
+        ],
+        modifier: 0, expr: '1d100', mode: 'normal', mp: {}
+    };
+    S.rolling = true; Sound.init();
+    try {
+        S.lastCfg = cfg;
+        const result = DiceEngine.execute(cfg);
+        result.coc = DiceEngine.coc(result.total, S.cocSkill);
+        S.lastResult = result;
+
+        renderDice(result);
+        $('resultBox').style.display = 'none';
+        await animateDice(result);
+        showResult(result);
+
+        S.history.unshift(result);
+        if (S.history.length > 50) S.history.pop();
+        renderHistory();
+    } catch (e) {
+        console.error('CoC error:', e);
+        toast('CoC 检定出错');
+    }
+    S.rolling = false;
+}
+
+/* ══════════════════════════════════════════════
+   Settings → Rolling transition
+   ══════════════════════════════════════════════ */
+function readSettings() {
+    S.count = clamp(parseInt($('sCount').value) || 1, 1, 99);
+    S.faces = clamp(parseInt($('sFaces').value) || 6, 2, 1000);
+    S.modifier = parseInt($('sMod').value) || 0;
+    S.cocSkill = clamp(parseInt($('sCoC').value) || 50, 1, 99);
+
+    if (S.faceMode === 'custom') {
+        const raw = $('sCustomFaces').value.trim();
+        const faces = raw.split(/[\n,]+/).map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        S.customFaces = faces.length >= 2 ? faces : null;
+    }
+}
+
+function goToRolling() {
+    readSettings();
+    if (S.faceMode === 'custom' && !S.customFaces) {
+        toast('自定义面值至少需要 2 个有效数字');
+        return;
+    }
+    S.lastCfg = buildConfig();
+    S.darkRevealed = false;
+    renderSummary();
+    $('diceDisplay').innerHTML = '';
+    $('diceDisplay').classList.add('empty');
+    $('resultBox').style.display = 'none';
+    $('darkOverlay').classList.remove('show');
+    showPage('pageRolling');
+}
+
+/* ══════════════════════════════════════════════
+   Events
+   ══════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+    renderPresets();
+    renderHistory();
+    updateSoundBtns();
+
+    // Shortcuts modal content
+    $('shortcutBody').innerHTML = SHORTCUTS.map(([k,d]) =>
+        '<div class="shortcut-row"><span>'+d+'</span><span class="shortcut-key">'+k+'</span></div>'
+    ).join('');
+
+    // ── Stepper buttons (delegated)
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('.stepper-btn');
+        if (!btn) return;
+        const stepper = btn.closest('.stepper');
+        const input = stepper.querySelector('.stepper-val');
+        if (!input) return;
+        const v = parseInt(input.value) || 0;
+        const min = input.min !== '' ? +input.min : -9999;
+        const max = input.max !== '' ? +input.max : 9999;
+        input.value = clamp(btn.dataset.act === 'inc' ? v+1 : v-1, min, max);
+    });
+
+    // ── Face mode segmented
+    document.querySelectorAll('[data-face]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-face]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            S.faceMode = btn.dataset.face;
+            $('customRow').style.display = S.faceMode === 'custom' ? '' : 'none';
+        });
+    });
+
+    // ── Mode segmented
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            S.mode = btn.dataset.mode;
+            const paramRow = $('modeParamRow');
+            const label = $('modeParamLabel');
+            const val = $('sModeVal');
+            const show = ['dropLowest','dropHighest','success','exploding'].includes(S.mode);
+            paramRow.style.display = show ? '' : 'none';
+            if (show) {
+                if (S.mode === 'success') { label.textContent = '成功阈值'; val.value = 5; }
+                else if (S.mode === 'dropLowest' || S.mode === 'dropHighest') { label.textContent = '丢弃数量'; val.value = 1; }
+                else { label.textContent = '最大追加'; val.value = 3; }
+            }
+        });
+    });
+
+    // ── Dark mode segmented
+    document.querySelectorAll('[data-dark]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-dark]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            S.dark = btn.dataset.dark === 'on';
+        });
+    });
+
+    // ── Mode params read
+    function readModeParams() {
+        const v = parseInt($('sModeVal').value) || 0;
+        switch (S.mode) {
+            case 'success': return { threshold: v };
+            case 'dropLowest': case 'dropHighest': return { dropCount: v || 1 };
+            case 'exploding': return { maxRerolls: v || 3 };
+            default: return {};
+        }
+    }
+
+    // ── Go to rolling
+    $('btnGoRoll').addEventListener('click', () => {
+        readSettings();
+        S.mp = readModeParams();
+        goToRolling();
+    });
+
+    // ── Expression roll from settings
+    $('btnExprRoll').addEventListener('click', () => {
+        readSettings();
+        const expr = $('sExpr').value.trim();
+        if (!expr) { toast('请输入表达式'); return; }
+        try {
+            const cfg = parseExpr(expr);
+            cfg.mode = S.mode; cfg.mp = readModeParams();
+            S.lastCfg = cfg;
+            S.darkRevealed = false;
+            renderSummary();
+            $('diceDisplay').innerHTML = ''; $('diceDisplay').classList.add('empty');
+            $('resultBox').style.display = 'none';
+            $('darkOverlay').classList.remove('show');
+            showPage('pageRolling');
+            setTimeout(() => doRoll(cfg), 100);
+        } catch (e) {
+            console.error('Parse error:', e);
+            toast('表达式解析失败');
+        }
+    });
+
+    // ── CoC button
+    $('btnCoC').addEventListener('click', () => {
+        readSettings();
+        S.darkRevealed = false;
+        S.lastCfg = { groups: [
+            { count:1, faces:[0,10,20,30,40,50,60,70,80,90], label:'十位', d100:'tens' },
+            { count:1, faces:[0,1,2,3,4,5,6,7,8,9], label:'个位', d100:'ones' }
+        ], modifier: 0, expr: '1d100', mode: 'normal', mp: {} };
+        renderSummary();
+        $('diceDisplay').innerHTML = ''; $('diceDisplay').classList.add('empty');
+        $('resultBox').style.display = 'none';
+        $('darkOverlay').classList.remove('show');
+        showPage('pageRolling');
+        setTimeout(() => doCoC(), 100);
+    });
+
+    // ── Presets
+    $('presetChips').addEventListener('click', e => {
+        const chip = e.target.closest('.preset-chip');
+        if (!chip) return;
+        if (chip.dataset.pdel) {
+            S.presets = S.presets.filter(p => p.id !== chip.dataset.pdel);
+            localStorage.setItem('dice_presets_v2', JSON.stringify(S.presets));
+            renderPresets();
+            toast('已删除');
+            return;
+        }
+        const all = [...BUILTINS, ...S.presets];
+        const preset = all.find(p => p.id === chip.dataset.pid);
+        if (!preset) return;
+        Sound.init(); Sound.click();
+        try {
+            const cfg = parseExpr(preset.expr);
+            cfg.mode = preset.mode; cfg.mp = preset.mp || {};
+            S.mode = cfg.mode; S.mp = cfg.mp;
+            S.lastCfg = cfg;
+            S.darkRevealed = false;
+            renderSummary();
+            $('diceDisplay').innerHTML = ''; $('diceDisplay').classList.add('empty');
+            $('resultBox').style.display = 'none';
+            showPage('pageRolling');
+            setTimeout(() => doRoll(cfg), 100);
+        } catch (e) {
+            console.error('Preset error:', e);
+            toast('预设加载失败');
+        }
+    });
+
+    // ── Save preset
+    $('btnSavePreset').addEventListener('click', () => $('mPreset').classList.add('show'));
+    $('btnConfirmPreset').addEventListener('click', () => {
+        const name = $('presetInput').value.trim();
+        if (!name) { toast('请输入名称'); return; }
+        readSettings();
+        S.mp = readModeParams();
+        const cfg = buildConfig();
+        S.presets.push({ id: 'p_'+Date.now(), name, expr: cfg.expr, mode: S.mode, mp: S.mp });
+        localStorage.setItem('dice_presets_v2', JSON.stringify(S.presets));
+        renderPresets();
+        $('mPreset').classList.remove('show');
+        $('presetInput').value = '';
+        toast('预设已保存');
+    });
+
+    // ── Advanced toggle
+    $('advToggle').addEventListener('click', () => {
+        $('advToggle').classList.toggle('open');
+        $('advBody').classList.toggle('open');
+    });
+
+    // ── Rolling page: roll button
+    $('btnRoll').addEventListener('click', () => {
+        S.mp = readModeParams();
+        const cfg = buildConfig();
+        cfg.mode = S.mode; cfg.mp = S.mp;
+        S.darkRevealed = false;
+        doRoll(cfg);
+    });
+
+    // ── Back to settings
+    $('btnBackSettings').addEventListener('click', () => showPage('pageSettings'));
+
+    // ── Dark roll reveal
+    $('darkOverlay').addEventListener('click', () => {
+        if (!S.dark || S.darkRevealed) return;
+        S.darkRevealed = true;
+        $('darkOverlay').classList.remove('show');
+        revealDiceValues();
+        if (S.lastResult) showResult(S.lastResult);
+    });
+
+    // ── Sound toggles
+    $('btnSoundS').addEventListener('click', () => { Sound.on = !Sound.on; updateSoundBtns(); toast(Sound.on?'音效已开启':'音效已关闭'); });
+    $('btnSoundR').addEventListener('click', () => { Sound.on = !Sound.on; updateSoundBtns(); toast(Sound.on?'音效已开启':'音效已关闭'); });
+
+    // ── Share
+    $('btnShare').addEventListener('click', async () => {
+        const cfg = S.lastCfg || buildConfig();
+        const params = new URLSearchParams();
+        params.set('expr', cfg.expr);
+        if (cfg.mode !== 'normal') params.set('mode', cfg.mode);
+        const url = location.origin + location.pathname + '?' + params.toString();
+        try { await navigator.clipboard.writeText(url); toast('链接已复制'); } catch { toast('复制失败'); }
+    });
+
+    // ── Clear history
+    $('btnClearHist').addEventListener('click', () => { S.history = []; renderHistory(); });
+
+    // ── Shortcuts modal
+    $('btnShowShortcuts').addEventListener('click', () => $('mShortcuts').classList.add('show'));
+    document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('show'));
+    }));
+    document.querySelectorAll('.modal-bg').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+    });
+
+    // ── Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+        const tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') { if (e.key === 'Escape') document.activeElement.blur(); return; }
+        const k = e.key.toLowerCase();
+        const map = { '4':'1d4', '6':'1d6', '8':'1d8', '0':'1d10', '2':'1d12', 't':'1d20', 'h':'1d100' };
+        if (map[k]) {
+            e.preventDefault();
+            try {
+                const cfg = parseExpr(map[k]);
+                cfg.mode = S.mode; cfg.mp = S.mp;
+                if (!$('pageRolling').classList.contains('active')) {
+                    S.lastCfg = cfg;
+                    S.darkRevealed = false;
+                    renderSummary();
+                    $('diceDisplay').innerHTML = ''; $('diceDisplay').classList.add('empty');
+                    $('resultBox').style.display = 'none';
+                    showPage('pageRolling');
+                }
+                doRoll(cfg);
+            } catch (err) { console.error(err); }
+        } else if (k === ' ' || k === 'r') {
+            e.preventDefault();
+            if ($('pageRolling').classList.contains('active') && S.lastCfg) doRoll(S.lastCfg);
+        } else if (e.key === 'Escape') {
+            if ($('pageRolling').classList.contains('active')) showPage('pageSettings');
+            document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('show'));
+        }
+    });
+
+    // ── URL params
+    const params = new URLSearchParams(location.search);
+    if (params.has('expr')) {
+        try {
+            const cfg = parseExpr(params.get('expr'));
+            if (params.has('mode')) cfg.mode = params.get('mode');
+            S.lastCfg = cfg;
+            renderSummary();
+            showPage('pageRolling');
+        } catch {}
+    }
+});
+</script>
+</body>
+</html>
